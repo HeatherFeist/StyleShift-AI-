@@ -1,8 +1,30 @@
 
+
 export interface EditOptions {
   hairColor: string;
   hairStyle: string;
+  
+  // Individual Makeup fields
+  lipColor: string;
+  lipIntensity: number;
+  blushColor: string;
+  blushIntensity: number;
+  eyeshadowColor: string;
+  eyeshadowStyle: string; // New field
+  eyeshadowIntensity: number;
+  eyelinerStyle: string;
+  eyelashesStyle: string;
+  
+  // Contour fields
+  contourColor: string;
+  contourMode: string;
+  contourIntensity: number; // Used for blending/opacity
+  contourReference?: File | null; // Specific file for placement guide
+  
+  // Legacy/Fallback field
   makeupLook: string;
+  makeupIntensity: number; // 0 to 100
+  
   outfit: string;
   background: string;
   customPrompt: string;
@@ -28,9 +50,11 @@ export interface GeneratedImage {
 export interface ClosetItem {
   id: string;
   name: string;
-  category: 'outfit' | 'hair' | 'makeup';
+  category: 'outfit' | 'hair' | 'makeup' | 'look';
   description: string;
   addedAt: number;
+  image?: string;
+  customData?: Partial<EditOptions>;
 }
 
 export interface Product {
@@ -96,7 +120,41 @@ export const HAIR_COLORS = [
 
 export const HAIR_STYLES = [
   'No Change', 'Straight', 'Wavy', 'Curly', 'Afro', 'Bob Cut', 'Pixie Cut', 
-  'Long Layers', 'Braids', 'Ponytail', 'Messy Bun', 'Bald'
+  'Long Layers', 'Braids', 'Ponytail', 'Messy Bun', 'Bald',
+  'Wolf Cut', 'Curtain Bangs', 'Beach Waves', 'Hollywood Waves', 'Buzz Cut'
+];
+
+// Specific Makeup Option Lists
+export const LIP_COLORS = [
+  'No Change', 'Red', 'Pink', 'Nude', 'Berry', 'Coral', 'Purple', 'Brown', 'Glossy Clear'
+];
+
+export const BLUSH_COLORS = [
+  'No Change', 'Pink', 'Peach', 'Rose', 'Bronze', 'Coral', 'Plum'
+];
+
+export const EYESHADOW_COLORS = [
+  'No Change', 'Neutral/Browns', 'Smokey Black', 'Gold Shimmer', 'Pink/Rose', 'Blue', 'Green', 'Purple', 'Glitter'
+];
+
+export const EYESHADOW_STYLES = [
+  'No Change', 'Smokey Eye', 'Cut Crease', 'Smudged/Grunge', 'Halo Eye', 'Winged Out', 'Glitter Topper', 'Matte Blend', 'Graphic'
+];
+
+export const EYELINER_STYLES = [
+  'No Change', 'Subtle Line', 'Classic Wing', 'Thick Wing', 'Smudged/Grunge', 'Graphic Liner', 'Cat Eye'
+];
+
+export const EYELASH_STYLES = [
+  'No Change', 'Natural', 'Volume', 'Lengthening', 'Wispy', 'Dramatic/Falsies'
+];
+
+export const CONTOUR_COLORS = [
+  'No Change', 'Cool Taupe', 'Warm Bronze', 'Deep Espresso', 'Neutral Beige', 'Terracotta', 'Soft Brown'
+];
+
+export const CONTOUR_MODES = [
+  'No Change', 'Soft Sculpt (Natural)', 'Sharp Definition (Glam)', 'Sun-Kissed (Bronzer)', 'Chiseled Jawline'
 ];
 
 export const MAKEUP_LOOKS = [
@@ -107,7 +165,8 @@ export const MAKEUP_LOOKS = [
 export const OUTFIT_STYLES = [
   'No Change', 'Casual T-Shirt & Jeans', 'Business Suit', 'Evening Gown', 'Summer Dress',
   'Leather Jacket & Black Jeans', 'Cyberpunk Techwear', 'Vintage 90s', 'Streetwear', 
-  'Bohemian', 'Superhero Costume'
+  'Bohemian', 'Superhero Costume',
+  'Old Money', 'Y2K Pop', 'Athleisure', 'Cottagecore', 'Dark Academia'
 ];
 
 export const BACKGROUNDS = [
@@ -118,26 +177,29 @@ export const BACKGROUNDS = [
 
 export const MOCK_PRODUCTS: Product[] = [
   // --- USER INVENTORY START ---
-  // You can copy and paste the block below to add more products.
   { 
-    id: 'my-shop-001', 
+    id: 'heatherfeist-20', 
     name: 'Highlighter Makeup Powder', 
     category: 'makeup', 
     price: 14.99, 
-    // This 'styleValue' is what the AI will try to replicate in the image
-    styleValue: '8-Color Highlighter Palette - Waterproof Long-Lasting Matte & Shimmer Finish, Multi-Purpose Blush & Contour Eyeshadow, Natural Brightening Shades from Light Pink to Golden Glitter, Portable Makeup Palette for Face Brightening, Blush Palette, Shimmering Effect, Metallic Finish', 
+    styleValue: 'Highlighter', 
     description: '8-Color Highlighter Palette - Waterproof Long-Lasting Matte & Shimmer Finish.',
-    // imageUrl: 'C:\Users\heath\Downloads\Makeup Highlighter image.avif' // Add your image URL here
-    supplierSku: 'ITEM-8821-GLOW', // Your Product Number / SKU
+    supplierSku: 'https://amzn.to/443MzpL', 
   },
   // --- USER INVENTORY END ---
 
   { id: 'p1', name: 'Midnight Velvet Gown', category: 'outfit', price: 299, styleValue: 'Evening Gown', description: 'Elegant floor-length velvet gown.', supplierSku: 'DRESS-001' },
   { id: 'p2', name: 'Urban Tech Jacket', category: 'outfit', price: 150, styleValue: 'Cyberpunk Techwear', description: 'Waterproof shell with neon accents.', supplierSku: 'JKT-TECH-99' },
   { id: 'p3', name: 'Vintage Denim Set', category: 'outfit', price: 89, styleValue: 'Vintage 90s', description: 'Classic high-waisted jeans and jacket.', supplierSku: 'DNM-SET-90' },
-  { id: 'p4', name: 'Ruby Woo Lipstick', category: 'makeup', price: 25, styleValue: 'Vintage / Red Lip', description: 'Iconic matte vivid red.', supplierSku: 'LIP-RED-01' },
-  { id: 'p5', name: 'Smokey Eye Palette', category: 'makeup', price: 45, styleValue: 'Smokey Eye', description: 'Deep charcoals and shimmers.', supplierSku: 'EYE-SMK-05' },
+  { id: 'p4', name: 'Ruby Woo Lipstick', category: 'makeup', price: 25, styleValue: 'Red', description: 'Iconic matte vivid red lipstick.', supplierSku: 'LIP-RED-01' },
+  { id: 'p5', name: 'Smokey Eye Palette', category: 'makeup', price: 45, styleValue: 'Smokey Black', description: 'Deep charcoals and shimmers.', supplierSku: 'EYE-SMK-05' },
   { id: 'p6', name: 'Boho Floral Dress', category: 'outfit', price: 75, styleValue: 'Summer Dress', description: 'Lightweight floral print with ruffles.', supplierSku: 'DRS-FLR-22' },
   { id: 'p7', name: 'Executive Blazer', category: 'outfit', price: 199, styleValue: 'Business Suit', description: 'Tailored fit navy blazer.', supplierSku: 'BLZ-NAVY-01' },
   { id: 'p8', name: 'Goth Choker & Liner', category: 'makeup', price: 35, styleValue: 'Goth', description: 'Heavy eyeliner kit with velvet choker.', supplierSku: 'ACC-GOTH-66' },
 ];
+
+declare global {
+  interface Window {
+    paypal: any;
+  }
+}

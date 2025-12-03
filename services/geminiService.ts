@@ -1,24 +1,78 @@
+
+
 import { GoogleGenAI } from "@google/genai";
 import { EditOptions } from "../types";
 
 /**
- * Helper to convert a File object to a Base64 string suitable for the API
- * (strips the data URL prefix).
+ * Supported MIME types for the Gemini API.
+ */
+const SUPPORTED_MIME_TYPES = [
+  'image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'
+];
+
+/**
+ * Helper to convert a File object to a Base64 string suitable for the API.
+ * Automatically converts unsupported formats (like AVIF) to PNG.
  */
 export const fileToGenerativePart = async (file: File): Promise<{ mimeType: string; data: string }> => {
+  // If the file type is supported, read it directly
+  if (SUPPORTED_MIME_TYPES.includes(file.type)) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        // Extract the base64 data part (remove "data:image/jpeg;base64,")
+        const base64Data = base64String.split(',')[1];
+        resolve({
+          mimeType: file.type,
+          data: base64Data,
+        });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  } else {
+    // If unsupported (e.g., image/avif), convert to PNG via Canvas
+    console.warn(`Converting unsupported file type ${file.type} to image/png`);
+    return convertImageToPng(file);
+  }
+};
+
+/**
+ * Converts an image file to a PNG base64 string using an HTML Canvas.
+ */
+const convertImageToPng = async (file: File): Promise<{ mimeType: string; data: string }> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      // Extract the base64 data part (remove "data:image/jpeg;base64,")
-      const base64Data = base64String.split(',')[1];
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not get canvas context"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+      const dataUrl = canvas.toDataURL('image/png');
+      const base64Data = dataUrl.split(',')[1];
+      
+      URL.revokeObjectURL(url);
       resolve({
-        mimeType: file.type,
-        data: base64Data,
+        mimeType: 'image/png',
+        data: base64Data
       });
     };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image for conversion"));
+    };
+    
+    img.src = url;
   });
 };
 
@@ -77,10 +131,91 @@ const buildPrompt = (options: EditOptions): string => {
     }
   }
 
-  // Makeup - Text instruction only if no reference
+  // Makeup - Handle individual fields if no reference
   if (!options.makeupReference) {
-    if (options.makeupLook !== 'No Change') {
-      parts.push(`ACTION: Apply a ${options.makeupLook} makeup style. Keep skin texture realistic.`);
+    let makeupApplied = false;
+
+    // 1. Lips
+    if (options.lipColor && options.lipColor !== 'No Change') {
+      parts.push(`ACTION: Apply ${options.lipColor} lipstick at ${options.lipIntensity}% intensity.`);
+      makeupApplied = true;
+    }
+    
+    // 2. Blush
+    if (options.blushColor && options.blushColor !== 'No Change') {
+      parts.push(`ACTION: Apply ${options.blushColor} blush to the cheeks at ${options.blushIntensity}% intensity.`);
+      makeupApplied = true;
+    }
+
+    // 3. Eyes (Shadow, Liner, Lashes)
+    // Check if either color or style is set
+    if ((options.eyeshadowColor && options.eyeshadowColor !== 'No Change') || (options.eyeshadowStyle && options.eyeshadowStyle !== 'No Change')) {
+      const color = options.eyeshadowColor !== 'No Change' ? options.eyeshadowColor : 'neutral/complementary';
+      
+      let styleInstruction = "";
+      // Descriptive instructions for learning purposes
+      switch (options.eyeshadowStyle) {
+        case 'Smokey Eye':
+          styleInstruction = "using a classic Smokey Eye technique (diffused gradient from lash line blending upwards)";
+          break;
+        case 'Cut Crease':
+          styleInstruction = "using a sharp Cut Crease technique (defined socket line with contrasting lid)";
+          break;
+        case 'Halo Eye':
+          styleInstruction = "using a Halo Eye technique (darker inner/outer corners, bright center lid)";
+          break;
+        case 'Smudged/Grunge':
+          styleInstruction = "using a messy, Smudged/Grunge application on the lid and lower lash line";
+          break;
+        case 'Winged Out':
+          styleInstruction = "blown out into a Winged shape extending towards the tail of the brow";
+          break;
+        case 'Glitter Topper':
+           styleInstruction = "with a high-shine Glitter Topper finish on the center lid";
+           break;
+        case 'Matte Blend':
+           styleInstruction = "with a soft, seamless Matte Blend";
+           break;
+        case 'Graphic':
+           styleInstruction = "using bold Graphic/Geometric shapes";
+           break;
+        default:
+           styleInstruction = "";
+      }
+
+      parts.push(`ACTION: Apply ${color} eyeshadow${styleInstruction} at ${options.eyeshadowIntensity}% intensity.`);
+      makeupApplied = true;
+    }
+
+    if (options.eyelinerStyle && options.eyelinerStyle !== 'No Change') {
+      parts.push(`ACTION: Apply ${options.eyelinerStyle} eyeliner.`);
+      makeupApplied = true;
+    }
+    if (options.eyelashesStyle && options.eyelashesStyle !== 'No Change') {
+      parts.push(`ACTION: Apply ${options.eyelashesStyle} eyelashes.`);
+      makeupApplied = true;
+    }
+    
+    // 4. Contour
+    // If a reference image is provided, logic is handled in generateEditedImage prompting.
+    // Here we handle text-based instruction if no reference.
+    if (!options.contourReference && options.contourColor !== 'No Change') {
+       const mode = options.contourMode !== 'No Change' ? options.contourMode : 'Soft Sculpt';
+       parts.push(`ACTION: Apply facial contouring using ${options.contourColor} shades in a ${mode} style. Blend edges smoothly at ${options.contourIntensity}% opacity to define cheekbones, jawline, and nose.`);
+       makeupApplied = true;
+    }
+
+    // Fallback: If no individual makeup applied, check generic 'Makeup Look'
+    if (!makeupApplied && options.makeupLook !== 'No Change') {
+      let intensityDesc = "";
+      if (options.makeupIntensity < 30) {
+        intensityDesc = "very subtle, sheer, barely visible";
+      } else if (options.makeupIntensity < 70) {
+        intensityDesc = "standard, balanced application";
+      } else {
+        intensityDesc = "bold, intense, heavy, full-coverage application";
+      }
+      parts.push(`ACTION: Apply a ${options.makeupLook} makeup style. Intensity: ${intensityDesc} (${options.makeupIntensity}%). Keep skin texture realistic.`);
     }
   }
 
@@ -133,11 +268,19 @@ export const generateEditedImage = async (
       imageIndex++;
     }
 
-    // Makeup Reference
+    // Makeup Reference (General)
     if (options.makeupReference) {
       parts.push({ inlineData: await fileToGenerativePart(options.makeupReference) });
       const ordinal = getOrdinal(imageIndex);
       prompt += `REFERENCE ${imageIndex - 1}: Use the ${ordinal} image as the 'Makeup Reference'. Extract the makeup style/colors. Do NOT copy the face. Apply this makeup to the person in the Selfie. `;
+      imageIndex++;
+    }
+
+    // Contour Reference (Specific placement guide)
+    if (options.contourReference) {
+      parts.push({ inlineData: await fileToGenerativePart(options.contourReference) });
+      const ordinal = getOrdinal(imageIndex);
+      prompt += `REFERENCE ${imageIndex - 1}: Use the ${ordinal} image as a CONTOUR PLACEMENT GUIDE. This image shows where to place highlights and shadows. Apply contouring to the source selfie following this pattern. Blend intensity: ${options.contourIntensity}%. `;
       imageIndex++;
     }
 

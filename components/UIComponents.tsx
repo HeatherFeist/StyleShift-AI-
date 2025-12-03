@@ -1,10 +1,10 @@
 
-import React, { InputHTMLAttributes, SelectHTMLAttributes, ReactNode, useRef, useState } from 'react';
+import React, { InputHTMLAttributes, SelectHTMLAttributes, ReactNode, useRef, useState, useEffect } from 'react';
 import { CartItem, OrderStatus } from '../types';
 
 // --- Button ---
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'success';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'success' | 'floating';
   isLoading?: boolean;
 }
 
@@ -16,14 +16,15 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props 
 }) => {
-  const baseStyles = "inline-flex items-center justify-center px-5 py-2.5 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyles = "inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variants = {
-    primary: "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 focus:ring-indigo-500 border border-transparent",
-    secondary: "bg-pink-600 hover:bg-pink-700 text-white shadow-lg shadow-pink-500/30 focus:ring-pink-500 border border-transparent",
-    outline: "bg-transparent border border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white focus:ring-gray-500",
-    ghost: "bg-transparent text-gray-400 hover:text-white hover:bg-gray-800",
-    success: "bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/30 focus:ring-green-500 border border-transparent"
+    primary: "px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 focus:ring-2 focus:ring-indigo-500",
+    secondary: "px-5 py-2.5 rounded-lg bg-pink-600 hover:bg-pink-700 text-white shadow-lg shadow-pink-500/30 focus:ring-2 focus:ring-pink-500",
+    outline: "px-5 py-2.5 rounded-lg bg-transparent border border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white focus:ring-2 focus:ring-gray-500",
+    ghost: "px-4 py-2 rounded-lg bg-transparent text-gray-400 hover:text-white hover:bg-gray-800",
+    success: "px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/30 focus:ring-2 focus:ring-green-500",
+    floating: "p-4 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/50 active:scale-95"
   };
 
   return (
@@ -42,6 +43,132 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+
+// --- Color Swatch ---
+interface ColorSwatchProps {
+  color: string;
+  label?: string;
+  isActive: boolean;
+  onClick: () => void;
+  isGradient?: boolean;
+}
+
+export const ColorSwatch: React.FC<ColorSwatchProps> = ({ color, label, isActive, onClick, isGradient }) => {
+  return (
+    <div className="flex flex-col items-center space-y-1 group cursor-pointer flex-shrink-0" onClick={onClick}>
+      <div 
+        className={`
+          w-10 h-10 rounded-full border-2 transition-all duration-200 shadow-sm
+          ${isActive ? 'border-white scale-110 shadow-lg shadow-white/20' : 'border-gray-600 group-hover:border-gray-400'}
+        `}
+        style={{ background: color }}
+        title={label}
+      >
+        {label === 'No Change' && (
+          <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-900 rounded-full">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </div>
+        )}
+      </div>
+      {isActive && label && label !== 'No Change' && (
+        <span className="text-[10px] text-white font-medium bg-black/50 px-1.5 py-0.5 rounded backdrop-blur-sm truncate max-w-[60px]">{label}</span>
+      )}
+    </div>
+  );
+};
+
+// --- Style Tile ---
+interface StyleTileProps {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+  icon?: ReactNode;
+  image?: string;
+}
+
+export const StyleTile: React.FC<StyleTileProps> = ({ label, isActive, onClick, icon, image }) => {
+  if (image) {
+    return (
+      <button 
+        onClick={onClick}
+        className={`
+          relative flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 group
+          ${isActive 
+            ? 'border-indigo-500 scale-105 shadow-xl shadow-indigo-900/40' 
+            : 'border-transparent hover:border-gray-600 opacity-90 hover:opacity-100'}
+        `}
+      >
+        {/* Background Image */}
+        <img 
+          src={image} 
+          alt={label} 
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+        />
+        
+        {/* Overlay Gradient */}
+        <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent ${isActive ? 'opacity-80' : 'opacity-60'}`}></div>
+        
+        {/* Label */}
+        <span className="absolute bottom-2 left-0 right-0 text-center text-[10px] font-bold text-white px-1 leading-tight tracking-wide drop-shadow-md">
+          {label}
+        </span>
+        
+        {/* Active Indicator */}
+        {isActive && (
+          <div className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.8)]"></div>
+        )}
+      </button>
+    );
+  }
+
+  // Fallback for text/icon only
+  return (
+    <button 
+      onClick={onClick}
+      className={`
+        flex-shrink-0 flex flex-col items-center justify-center px-2 rounded-lg border transition-all h-[60px] min-w-[80px]
+        ${isActive 
+          ? 'bg-indigo-600/20 border-indigo-500 text-white' 
+          : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700 hover:text-gray-200'}
+      `}
+    >
+      {icon && <div className="mb-1">{icon}</div>}
+      <span className="text-[10px] font-medium text-center leading-tight">{label}</span>
+    </button>
+  );
+};
+
+// --- Category Button ---
+interface CategoryButtonProps {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+}
+
+export const CategoryButton: React.FC<CategoryButtonProps> = ({ label, isActive, onClick, icon }) => (
+  <button 
+    onClick={onClick}
+    className={`
+      flex flex-col items-center justify-center w-full py-3 border-b-2 transition-colors
+      ${isActive 
+        ? 'border-indigo-500 text-white' 
+        : 'border-transparent text-gray-500 hover:text-gray-300'}
+    `}
+  >
+    <div className={`mb-1 ${isActive ? 'text-indigo-400' : 'text-current'}`}>
+      {icon}
+    </div>
+    <span className="text-[10px] font-semibold uppercase tracking-wide">{label}</span>
+  </button>
+);
+
+// --- Scrollable Row ---
+export const ScrollableRow: React.FC<{ children: ReactNode; className?: string }> = ({ children, className = '' }) => (
+  <div className={`flex overflow-x-auto space-x-3 pb-2 scrollbar-hide px-1 ${className}`}>
+    {children}
+  </div>
+);
 
 // --- Select ---
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
@@ -71,6 +198,39 @@ export const SelectGroup: React.FC<SelectProps> = ({ label, options, className =
     </div>
   );
 };
+
+// --- Slider ---
+interface SliderProps extends InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  value: number;
+  min?: number;
+  max?: number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+export const Slider: React.FC<SliderProps> = ({ label, value, min=0, max=100, onChange, ...props }) => (
+  <div className="flex flex-col space-y-2 w-full">
+    {label && (
+      <div className="flex justify-between items-center">
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</label>
+        <span className="text-xs font-mono text-indigo-400 bg-indigo-900/30 px-2 py-0.5 rounded">{value}%</span>
+      </div>
+    )}
+    <div className="relative w-full h-6 flex items-center">
+      <input 
+        type="range" 
+        min={min} 
+        max={max} 
+        value={value} 
+        onChange={onChange}
+        className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 focus:outline-none focus:ring-0 z-10"
+        {...props}
+      />
+      {/* Track Background Visual */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-gray-700 to-indigo-900/50 w-full rounded-lg pointer-events-none"></div>
+    </div>
+  </div>
+);
 
 // --- Card Components ---
 export const Card: React.FC<{ children: ReactNode; className?: string }> = ({ children, className = '' }) => (
@@ -177,6 +337,31 @@ export const MiniFileUpload: React.FC<MiniFileUploadProps> = ({ label, file, onF
   );
 };
 
+// --- TipCard ---
+interface TipCardProps {
+  title: string;
+  description: string;
+  imageVisual?: ReactNode;
+}
+
+export const TipCard: React.FC<TipCardProps> = ({ title, description, imageVisual }) => {
+  return (
+    <div className="bg-gradient-to-r from-gray-800 to-gray-900 border-l-4 border-indigo-500 rounded-r-lg p-3 my-2 animate-fade-in shadow-md max-w-md">
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 mt-0.5 text-indigo-400">
+           {imageVisual || (
+             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+           )}
+        </div>
+        <div>
+          <h5 className="text-[10px] font-bold text-indigo-300 uppercase tracking-wide mb-0.5">{title}</h5>
+          <p className="text-[11px] text-gray-300 leading-snug">{description}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- ProductCard ---
 interface ProductCardProps {
   name: string;
@@ -188,6 +373,7 @@ interface ProductCardProps {
   purchaseUrl?: string;
   onTryOn: () => void;
   onAddToCart: () => void;
+  onBuyNow: () => void;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ 
@@ -197,8 +383,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   category, 
   imageUrl, 
   supplierSku,
+  purchaseUrl,
   onTryOn,
-  onAddToCart
+  onAddToCart,
+  onBuyNow
 }) => {
   return (
     <div className="group bg-gray-900 border border-gray-700 rounded-lg overflow-hidden hover:border-indigo-500 transition-colors flex flex-col h-full">
@@ -232,19 +420,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         
         <p className="text-xs text-gray-400 line-clamp-2 mb-3 flex-1">{description}</p>
         
-        <div className="flex gap-2 mt-auto">
-          <button 
-            onClick={onTryOn}
-            className="flex-1 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 text-xs py-1.5 rounded transition-colors border border-indigo-500/30 font-medium"
-          >
-            Try On
-          </button>
+        <div className="mt-auto space-y-2">
+          <div className="flex gap-2">
+            <button 
+              onClick={onTryOn}
+              className="flex-1 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 text-xs py-1.5 rounded transition-colors border border-indigo-500/30 font-medium"
+            >
+              Try On
+            </button>
+            
+            <button 
+              onClick={onAddToCart}
+              className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 text-xs py-1.5 rounded text-center transition-colors font-medium flex items-center justify-center shadow-sm"
+            >
+              Add to Cart
+            </button>
+          </div>
           
           <button 
-            onClick={onAddToCart}
-            className="flex-1 bg-gray-100 hover:bg-white text-gray-900 text-xs py-1.5 rounded text-center transition-colors font-bold flex items-center justify-center shadow-sm"
+            onClick={onBuyNow}
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs py-2 rounded font-bold shadow-lg shadow-indigo-900/20 transition-all transform active:scale-95"
           >
-            Add to Cart
+            Buy Now
           </button>
         </div>
       </div>
@@ -259,14 +456,21 @@ interface ClosetItemProps {
   category: string;
   onWear: () => void;
   onDelete: () => void;
+  image?: string;
 }
 
-export const ClosetItemCard: React.FC<ClosetItemProps> = ({ name, description, category, onWear, onDelete }) => (
+export const ClosetItemCard: React.FC<ClosetItemProps> = ({ name, description, category, onWear, onDelete, image }) => (
   <div className="flex items-center justify-between p-3 bg-gray-800 border border-gray-700 rounded-lg group hover:border-pink-500/50 transition-colors">
     <div className="flex items-center space-x-3 overflow-hidden">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${category === 'outfit' ? 'bg-pink-900/50 text-pink-400' : 'bg-purple-900/50 text-purple-400'}`}>
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
-      </div>
+      {image ? (
+        <div className="w-10 h-10 rounded-md bg-black border border-gray-600 overflow-hidden flex-shrink-0">
+           <img src={image} alt={name} className="w-full h-full object-cover" />
+        </div>
+      ) : (
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${category === 'outfit' ? 'bg-pink-900/50 text-pink-400' : 'bg-purple-900/50 text-purple-400'}`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+        </div>
+      )}
       <div className="min-w-0">
         <h4 className="text-sm font-medium text-white truncate">{name}</h4>
         <p className="text-xs text-gray-500 truncate">{description}</p>
@@ -320,6 +524,156 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange }) => (
     ))}
   </div>
 );
+
+// --- PayPal Buttons ---
+export const PayPalButtons: React.FC<{ amount: number; onSuccess: () => void }> = ({ amount, onSuccess }) => {
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState(false);
+  const [isSdkReady, setIsSdkReady] = useState(false);
+  const buttonsInstance = useRef<any>(null); 
+  
+  const onSuccessRef = useRef(onSuccess);
+  const amountRef = useRef(amount);
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    amountRef.current = amount;
+  }, [onSuccess, amount]);
+
+  useEffect(() => {
+    if (window.paypal) {
+      setIsSdkReady(true);
+      return;
+    }
+    const interval = setInterval(() => {
+      if (window.paypal) {
+        setIsSdkReady(true);
+        clearInterval(interval);
+      }
+    }, 500);
+    
+    // Timeout to prevent infinite checking
+    const timeout = setTimeout(() => {
+        clearInterval(interval);
+        if (!window.paypal) {
+            console.error("PayPal SDK load timeout");
+            setError(true);
+        }
+    }, 10000);
+
+    return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSdkReady || error) return;
+    
+    const container = buttonRef.current;
+    if (!container) return;
+
+    // Robust cleanup
+    if (buttonsInstance.current) {
+        try { 
+            if (buttonsInstance.current.close) buttonsInstance.current.close(); 
+        } catch (e) { /* ignore */ }
+        buttonsInstance.current = null;
+    }
+    container.innerHTML = "";
+    
+    let isCancelled = false;
+
+    const renderButtons = async () => {
+        try {
+            if (!window.paypal) {
+                throw new Error("PayPal object missing");
+            }
+            
+            // Wait a tick to ensure DOM is ready
+            await new Promise(r => setTimeout(r, 0));
+            if (isCancelled) return;
+
+            const buttons = window.paypal.Buttons({
+                style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'checkout' },
+                createOrder: (data: any, actions: any) => {
+                    return actions.order.create({
+                        purchase_units: [{
+                            amount: { value: amountRef.current.toFixed(2) }
+                        }]
+                    }).catch((err: any) => {
+                        console.error("CreateOrder Error", err);
+                        // Don't throw here to avoid unhandled exception bubbling, just log
+                        // The onError handler usually catches the fallout
+                        return null; 
+                    });
+                },
+                onApprove: (data: any, actions: any) => {
+                    return actions.order.capture().then((details: any) => {
+                        console.log('Transaction completed by ' + details.payer.name.given_name);
+                        if (!isCancelled) onSuccessRef.current();
+                    }).catch((err: any) => {
+                         console.error("Capture Error", err);
+                    });
+                },
+                onError: (err: any) => {
+                    console.error("PayPal Error Event:", err);
+                    if (!isCancelled) setError(true);
+                }
+            });
+
+            buttonsInstance.current = buttons;
+
+            if (buttons.isEligible()) {
+                await buttons.render(container).catch((err: any) => {
+                     console.error("PayPal Render Error:", err);
+                     if (!isCancelled) setError(true);
+                });
+            } else {
+                console.warn("PayPal not eligible");
+                if (!isCancelled) setError(true);
+            }
+        } catch (err) {
+            console.error("PayPal Init Error:", err);
+            if (!isCancelled) setError(true);
+        }
+    };
+
+    renderButtons();
+
+    return () => {
+        isCancelled = true;
+        if (buttonsInstance.current) {
+            try { 
+                if(buttonsInstance.current.close) buttonsInstance.current.close(); 
+            } catch (e) {}
+            buttonsInstance.current = null;
+        }
+        // Don't clear innerHTML here to prevent flickering if re-rendering quickly, 
+        // let the next effect run clear it.
+    };
+
+  }, [isSdkReady, error, amount]); 
+
+  if (error) {
+    return (
+      <div className="space-y-2">
+          <div className="bg-red-500/10 border border-red-500/30 rounded p-2 text-[10px] text-red-200 text-center">
+              Payment Gateway Unavailable (Demo Mode)
+          </div>
+          <Button 
+            variant="primary" 
+            onClick={onSuccess} 
+            className="w-full"
+          >
+            Pay ${amount.toFixed(2)} (Simulated)
+          </Button>
+      </div>
+    );
+  }
+
+  return <div ref={buttonRef} className="w-full relative z-0 min-h-[150px]" />;
+};
 
 // --- Cart Sidebar ---
 interface CartSidebarProps {
@@ -467,11 +821,14 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                  <span className="text-gray-400">Subtotal</span>
                  <span className="text-xl font-bold text-white">${total.toFixed(2)}</span>
                </div>
-               <Button onClick={onCheckout} className="w-full h-12 text-lg shadow-xl shadow-indigo-900/20">
-                 Pay Now
-               </Button>
+               
+               {/* PayPal Integration */}
+               <div className="w-full relative z-0">
+                  <PayPalButtons amount={total} onSuccess={onCheckout} />
+               </div>
+               
                <p className="text-[10px] text-gray-500 text-center mt-3">
-                 Secure checkout powered by Stripe. Orders are automatically fulfilled.
+                 Secure checkout powered by PayPal. Orders are automatically fulfilled.
                </p>
             </div>
           )}

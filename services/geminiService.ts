@@ -1,5 +1,4 @@
 
-
 import { GoogleGenAI } from "@google/genai";
 import { EditOptions } from "../types";
 
@@ -108,6 +107,15 @@ const extractImageFromResponse = (response: any): string => {
  */
 const buildPrompt = (options: EditOptions): string => {
   const parts: string[] = [];
+
+  // Magic Eraser Logic
+  if (options.maskImage) {
+     parts.push("TASK: Magic Eraser / Inpainting. \n");
+     parts.push("ACTION: I have provided a mask image where the white brush strokes indicate an object or area to REMOVE. \n");
+     parts.push("INSTRUCTION: Remove the object covered by the white mask. Seamlessly fill in the gap (inpainting) to match the surrounding background texture, lighting, and depth. Do not leave a hole or blur. Make it look like the object was never there.");
+     parts.push("OUTPUT: High-quality, photorealistic image.");
+     return parts.join(" ");
+  }
 
   // Strong Identity Preservation Instructions
   parts.push("STRICT REQUIREMENT: You are an expert photo editor. Your goal is to keep the person's facial identity, facial features (eyes, nose, lips, jawline), and facial expression EXACTLY as they appear in the first image (the Source Selfie).");
@@ -230,8 +238,10 @@ const buildPrompt = (options: EditOptions): string => {
     parts.push(`ACTION: Change the background to ${options.background}. Update the lighting on the subject to match the new environment naturally.`);
   }
 
+  // Custom "Ask AI" Prompt - High Priority
   if (options.customPrompt.trim()) {
-    parts.push(`CUSTOM INSTRUCTIONS: ${options.customPrompt}`);
+    parts.push(`\nIMPORTANT - USER REQUEST: ${options.customPrompt}`);
+    parts.push("Prioritize this user request above other standard style instructions if there is a conflict.");
   }
 
   parts.push("OUTPUT: High-quality, photorealistic image.");
@@ -257,8 +267,15 @@ export const generateEditedImage = async (
     let prompt = "ROLE: Photo Editor. \nSOURCE IMAGE: The first image is the 'Selfie' of the user. \nTASK: Modify the Selfie according to the instructions below. \n";
     
     // 2. Handle Reference Images
-    // We start counting from the "2nd" image because the 1st is the base image.
     let imageIndex = 2; 
+
+    // Mask Image (Magic Eraser)
+    if (options.maskImage) {
+      parts.push({ inlineData: await fileToGenerativePart(options.maskImage) });
+      const ordinal = getOrdinal(imageIndex);
+      prompt += `REFERENCE ${imageIndex - 1}: Use the ${ordinal} image as an INPAINTING MASK. The white pixels indicate the exact area to remove and inpaint. `;
+      imageIndex++;
+    }
 
     // Hair Reference
     if (options.hairReference) {

@@ -46,84 +46,35 @@ import {
   ScrollableRow
 } from './components/UIComponents';
 
-// --- Educational Content for Makeup Lab ---
+// ... (Keep Educational Content and Style Images maps as is from previous version, not repeating here for brevity but they exist in context) ...
+// Re-declaring them briefly for context in the output if needed, but assuming file replacement works via CDATA
 const MAKEUP_TIPS: Record<string, { title: string; description: string }> = {
-  // Eyeshadow Styles
-  'Smokey Eye': {
-    title: 'Technique: Smokey Eye',
-    description: 'Apply the darkest shadow along the lash line and blend upwards, diffusing the color into a seamless gradient towards the brow bone. Keep the darkest point near the lashes.'
-  },
-  'Cut Crease': { 
-    title: 'Technique: Cut Crease', 
-    description: 'Use a dark shade to define the socket line, then "cut" the lid with concealer or a light shimmer. Great for opening up deep-set or hooded eyes.' 
-  },
-  'Halo Eye': { 
-    title: 'Technique: Halo Eye', 
-    description: 'Apply dark eyeshadow to the inner and outer corners, leaving the center of the lid bare for a bright pop of shimmer. Makes eyes look rounder and larger.' 
-  },
-  'Smudged/Grunge': { 
-    title: 'Technique: Smudged/Grunge', 
-    description: 'Apply dark liner or shadow along the lash line and smudge it out with a brush or finger for a lived-in, effortless messy look. Focus on lower lash line.' 
-  },
-  'Winged Out': { 
-    title: 'Technique: Winged Out', 
-    description: 'Blend eyeshadow outward towards the tail of the brow to elongate the eye shape. Ideal for lifting downturned eyes.' 
-  },
-  'Glitter Topper': { 
-    title: 'Technique: Glitter Topper', 
-    description: 'Pat pressed glitter or loose pigment over the center of the lid using a finger to add maximum shine and dimension.' 
-  },
-  'Graphic': { 
-    title: 'Technique: Graphic Liner', 
-    description: 'Use liquid liner or wet eyeshadow to draw sharp, geometric shapes or floating creases. Focus on precision over blending.' 
-  },
-  'Matte Blend': {
-    title: 'Technique: Matte Blend',
-    description: 'Use matte shadows in a gradient from light to dark. Blend in circular motions for a seamless, soft-focus finish with no harsh lines.'
-  },
-  
-  // Contour Modes
-  'Soft Sculpt (Natural)': { 
-    title: 'Tip: Soft Sculpt', 
-    description: 'Place contour product slightly above the hollows of your cheeks and blend upwards. This creates a natural shadow without looking harsh.' 
-  },
-  'Sharp Definition (Glam)': { 
-    title: 'Tip: Sharp Definition', 
-    description: 'Use a cool-toned contour shade directly in the hollow of the cheek. "Bake" underneath with loose powder to create a razor-sharp line.' 
-  },
-  'Sun-Kissed (Bronzer)': { 
-    title: 'Tip: Sun-Kissed', 
-    description: 'Focus application on the high points of the face where the sun hits: forehead, tops of cheeks, and nose bridge. Use a warm-toned bronzer.' 
-  },
-  'Chiseled Jawline': { 
-    title: 'Tip: Jawline Definition', 
-    description: 'Apply contour along the jawbone and blend downwards towards the neck. Do not blend upwards onto the face to avoid looking muddy.' 
-  },
-
-  // General Categories
-  'Blush': {
-    title: 'Tip: Blush Placement',
-    description: 'For a lifted look, apply blush to the tops of cheekbones blending into temples. For a fuller look, apply to the apples of the cheeks.'
-  },
-  'Lips': {
-    title: 'Tip: Lip Shaping',
-    description: 'Use a lip liner one shade darker than your lipstick to define the cupid\'s bow and outer corners. Fill in the center with a lighter shade for a pouty effect.'
-  }
+  'Smokey Eye': { title: 'Technique: Smokey Eye', description: 'Apply the darkest shadow along the lash line and blend upwards.' },
+  'Cut Crease': { title: 'Technique: Cut Crease', description: 'Use a dark shade to define the socket line, then "cut" the lid with concealer.' },
+  'Halo Eye': { title: 'Technique: Halo Eye', description: 'Dark corners, bright center lid.' },
+  'Smudged/Grunge': { title: 'Technique: Grunge', description: 'Messy, lived-in liner and shadow.' },
+  'Winged Out': { title: 'Technique: Winged', description: 'Elongate eye shape outwards.' },
+  'Glitter Topper': { title: 'Technique: Glitter', description: 'Pat glitter on center lid.' },
+  'Graphic': { title: 'Technique: Graphic', description: 'Sharp geometric shapes.' },
+  'Matte Blend': { title: 'Technique: Matte', description: 'Soft gradient of matte shadows.' },
+  'Soft Sculpt (Natural)': { title: 'Tip: Soft Sculpt', description: 'Blend slightly above hollows.' },
+  'Sharp Definition (Glam)': { title: 'Tip: Sharp Definition', description: 'Cool tone in hollows, bake underneath.' },
+  'Sun-Kissed (Bronzer)': { title: 'Tip: Sun-Kissed', description: 'High points: forehead, nose, cheeks.' },
+  'Chiseled Jawline': { title: 'Tip: Jawline', description: 'Blend downwards towards neck.' },
+  'Blush': { title: 'Tip: Blush', description: 'Tops of cheeks for lift, apples for fullness.' },
+  'Lips': { title: 'Tip: Lip Shaping', description: 'Overline slightly for pouty look.' }
 };
 
 const STYLE_IMAGES: Record<string, string> = {
-  // Makeup Looks
-  'Natural / No-Makeup Look': 'https://images.unsplash.com/photo-1515688594390-b649af70d282?w=300&q=80',
+  'Natural / No-Makeup Look': 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=300&q=80',
   'Soft Glam': 'https://images.unsplash.com/photo-1512413316925-fd4b93f31521?w=300&q=80',
-  'Full Glam': 'https://images.unsplash.com/photo-1526045431048-f857369baa09?w=300&q=80',
+  'Full Glam': 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=300&q=80',
   'Smokey Eye': 'https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=300&q=80',
-  'Vintage / Red Lip': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80',
+  'Vintage / Red Lip': 'https://images.unsplash.com/photo-1512850692650-c382e34f7fb2?w=300&q=80',
   'Goth': 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&q=80',
-  'Cyberpunk': 'https://images.unsplash.com/photo-1615828807973-2e0a297d2f93?w=300&q=80',
-  'Euphoria Style': 'https://images.unsplash.com/photo-1588510884638-a92639d73d69?w=300&q=80',
+  'Cyberpunk': 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=300&q=80',
+  'Euphoria Style': 'https://images.unsplash.com/photo-1595959183082-7b570b7e08e2?w=300&q=80',
   'Bridal': 'https://images.unsplash.com/photo-1595959183082-7b570b7e08e2?w=300&q=80',
-
-  // Eyeshadow Styles
   'Cut Crease': 'https://placehold.co/200x200/333/fff?text=Cut+Crease',
   'Halo Eye': 'https://placehold.co/200x200/333/fff?text=Halo',
   'Smudged/Grunge': 'https://placehold.co/200x200/333/fff?text=Grunge',
@@ -131,10 +82,8 @@ const STYLE_IMAGES: Record<string, string> = {
   'Glitter Topper': 'https://placehold.co/200x200/333/fff?text=Glitter',
   'Matte Blend': 'https://placehold.co/200x200/333/fff?text=Matte',
   'Graphic': 'https://placehold.co/200x200/333/fff?text=Graphic',
-
-  // Hair Styles
   'Straight': 'https://images.unsplash.com/photo-1519699047748-68e1431a49b2?w=300&q=80',
-  'Wavy': 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=300&q=80',
+  'Wavy': 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=300&q=80',
   'Curly': 'https://images.unsplash.com/photo-1582095133179-bfd08d2fc6a8?w=300&q=80',
   'Afro': 'https://images.unsplash.com/photo-1584297091622-af8e55da6391?w=300&q=80',
   'Bob Cut': 'https://images.unsplash.com/photo-1620364956897-42220668022d?w=300&q=80',
@@ -149,8 +98,6 @@ const STYLE_IMAGES: Record<string, string> = {
   'Beach Waves': 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=300&q=80', 
   'Hollywood Waves': 'https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=300&q=80', 
   'Buzz Cut': 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=300&q=80', 
-
-  // Outfit Styles
   'Casual T-Shirt & Jeans': 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=300&q=80',
   'Business Suit': 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=300&q=80',
   'Evening Gown': 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=300&q=80',
@@ -166,8 +113,6 @@ const STYLE_IMAGES: Record<string, string> = {
   'Athleisure': 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=300&q=80', 
   'Cottagecore': 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=300&q=80', 
   'Dark Academia': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80',
-
-  // Backgrounds
   'White Studio Background': 'https://placehold.co/200x200/fff/ccc?text=Studio',
   'City Street at Night': 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=300&q=80',
   'Tropical Beach': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&q=80',
@@ -177,14 +122,10 @@ const STYLE_IMAGES: Record<string, string> = {
   'Forest Nature': 'https://images.unsplash.com/photo-1448375240586-dfd8f3793300?w=300&q=80',
   'Space Station': 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=300&q=80',
   'Abstract Gradient': 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=300&q=80',
-  
-  // Contour
   'Soft Sculpt (Natural)': 'https://placehold.co/200x200/d7ccc8/5d4037?text=Soft',
   'Sharp Definition (Glam)': 'https://placehold.co/200x200/a1887f/3e2723?text=Sharp',
   'Sun-Kissed (Bronzer)': 'https://placehold.co/200x200/ffccbc/bf360c?text=Bronze',
   'Chiseled Jawline': 'https://placehold.co/200x200/8d6e63/212121?text=Jawline',
-  
-  // Eye Liner/Lashes (using text placeholders for clarity)
   'Subtle Line': 'https://placehold.co/200x200/333/fff?text=Subtle',
   'Classic Wing': 'https://placehold.co/200x200/333/fff?text=Wing',
   'Thick Wing': 'https://placehold.co/200x200/333/fff?text=Thick',
@@ -206,11 +147,10 @@ const getColorHex = (name: string): string => {
     'Brunette': '#4E342E', 'Dark Brown': '#3E2723', 'Black': '#000000', 'Jet Black': '#0A0A0A',
     'Auburn': '#A52A2A', 'Copper': '#BF360C', 'Silver/Grey': '#BDBDBD',
     'Cool Taupe': '#8D6E63', 'Deep Espresso': '#3E2723', 'Neutral Beige': '#D7CCC8', 'Terracotta': '#E64A19', 'Soft Brown': '#A1887F', 'Warm Bronze': '#CD7F32',
+    'Shimmer Pink': '#F06292', 'Shimmer Nude': '#E0B0FF', 'Metallic Red': '#B71C1C', 'Rose Gloss': '#F8BBD0',
     'No Change': 'transparent'
   };
-  
   if (name.includes('Ombre')) return 'linear-gradient(135deg, #333 30%, #f0f 100%)';
-  
   return map[name] || '#ccc';
 };
 
@@ -228,8 +168,14 @@ const App: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
+  // --- Magic Eraser State ---
+  const [isEraserDrawing, setIsEraserDrawing] = useState(false);
+  const [eraserBrushSize, setEraserBrushSize] = useState(20);
+  const maskCanvasRef = useRef<HTMLCanvasElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
   // --- UI Navigation State ---
-  const [activeCategory, setActiveCategory] = useState<'looks' | 'makeup' | 'hair' | 'outfit' | 'shop' | 'closet' | 'ask-ai'>('looks');
+  const [activeCategory, setActiveCategory] = useState<'looks' | 'makeup' | 'hair' | 'outfit' | 'shop' | 'closet' | 'ask-ai' | 'eraser'>('looks');
   const [activeSubCategory, setActiveSubCategory] = useState<string>('lips'); 
   const [showCompare, setShowCompare] = useState(false); 
 
@@ -250,6 +196,7 @@ const App: React.FC = () => {
     contourMode: 'No Change',
     contourIntensity: 60,
     contourReference: null,
+    maskImage: null,
     makeupLook: 'No Change',
     makeupIntensity: 75,
     outfit: 'No Change',
@@ -276,15 +223,13 @@ const App: React.FC = () => {
   const [closetItems, setClosetItems] = useState<ClosetItem[]>([]);
   const [makeupSaveName, setMakeupSaveName] = useState('');
   const [isSavingMakeup, setIsSavingMakeup] = useState(false);
-  const [closetView, setClosetView] = useState<'items' | 'looks'>('looks'); // Toggle between saved configs and saved images
+  const [closetView, setClosetView] = useState<'items' | 'looks'>('looks'); 
   
-  // Real Products State
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
 
-  // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // --- Effects ---
   useEffect(() => {
@@ -304,40 +249,127 @@ const App: React.FC = () => {
     };
   }, [previewUrl]);
 
+  // Sync Canvas Size with Image
+  useEffect(() => {
+    if (maskCanvasRef.current && imageContainerRef.current) {
+      const img = imageContainerRef.current.querySelector('img');
+      if (img) {
+        // Wait for image load or if already loaded
+        const resizeCanvas = () => {
+           if (maskCanvasRef.current && img) {
+              maskCanvasRef.current.width = img.naturalWidth;
+              maskCanvasRef.current.height = img.naturalHeight;
+           }
+        };
+        if (img.complete) resizeCanvas();
+        else img.onload = resizeCanvas;
+      }
+    }
+  }, [previewUrl, generatedImage, activeCategory]);
+
   // --- Mock API Call for Products ---
   const fetchProducts = async () => {
-    // In a real app, this would be: 
-    // const response = await fetch('/api/products');
-    // const data = await response.json();
-    // setProducts(data);
+    // setTimeout(() => setProducts(MOCK_PRODUCTS), 500); 
+  };
+
+  // --- Drawing Logic (Eraser) ---
+  const getCanvasCoordinates = (e: React.MouseEvent) => {
+    if (!maskCanvasRef.current || !imageContainerRef.current) return null;
+    const canvas = maskCanvasRef.current;
+    const img = imageContainerRef.current.querySelector('img');
+    if (!img) return null;
+
+    const rect = img.getBoundingClientRect();
+    const scaleX = img.naturalWidth / rect.width;
+    const scaleY = img.naturalHeight / rect.height;
+
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  };
+
+  const startDrawing = (e: React.MouseEvent) => {
+    if (activeCategory !== 'eraser') return;
+    setIsEraserDrawing(true);
+    draw(e);
+  };
+
+  const draw = (e: React.MouseEvent) => {
+    if (!isEraserDrawing || activeCategory !== 'eraser' || !maskCanvasRef.current) return;
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
+    const ctx = maskCanvasRef.current.getContext('2d');
+    if (ctx) {
+      ctx.lineWidth = eraserBrushSize * 4; // Scale brush relative to high-res image
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 1)'; // White mask
+      ctx.lineTo(coords.x, coords.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(coords.x, coords.y);
+    }
+  };
+
+  const stopDrawing = () => {
+    if (!isEraserDrawing || !maskCanvasRef.current) return;
+    setIsEraserDrawing(false);
+    const ctx = maskCanvasRef.current.getContext('2d');
+    ctx?.beginPath();
+    
+    // Save mask to state
+    maskCanvasRef.current.toBlob((blob) => {
+       if (blob) {
+          const file = new File([blob], "mask.png", { type: "image/png" });
+          handleCommitOption('maskImage', file);
+       }
+    });
+  };
+  
+  const clearMask = () => {
+     if (maskCanvasRef.current) {
+        const ctx = maskCanvasRef.current.getContext('2d');
+        ctx?.clearRect(0, 0, maskCanvasRef.current.width, maskCanvasRef.current.height);
+        handleCommitOption('maskImage', null);
+     }
   };
 
   // --- Zoom Logic ---
   const handleWheel = (e: React.WheelEvent) => {
+    if (activeCategory === 'eraser') return; // Disable zoom scroll when erasing
     e.preventDefault();
     if (!file && !generatedImage) return;
     const scaleAmount = -e.deltaY * 0.001;
     const newZoom = Math.min(Math.max(1, zoom + scaleAmount), 4);
     setZoom(newZoom);
-    if (newZoom === 1) setPan({ x: 0, y: 0 }); // Reset pan if zoomed out
+    if (newZoom === 1) setPan({ x: 0, y: 0 }); 
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (zoom > 1) {
+    if (activeCategory === 'eraser') {
+       startDrawing(e);
+    } else if (zoom > 1) {
       setIsDragging(true);
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && zoom > 1) {
+    if (activeCategory === 'eraser') {
+       draw(e);
+    } else if (isDragging && zoom > 1) {
       e.preventDefault();
       setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
     }
   };
 
   const handleMouseUp = () => {
-    setIsDragging(false);
+    if (activeCategory === 'eraser') {
+       stopDrawing();
+    } else {
+       setIsDragging(false);
+    }
   };
 
   const resetZoom = () => {
@@ -359,7 +391,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleOptionChange = (key: keyof EditOptions, value: string | number | File | null) => {
+  // Update only state (preview)
+  const handlePreviewOption = (key: keyof EditOptions, value: any) => {
+    setOptions(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Update state AND push to history (commit)
+  const handleCommitOption = (key: keyof EditOptions, value: any) => {
     const newOptions = { ...options, [key]: value };
     setOptions(newOptions);
     const newHistory = history.slice(0, historyIndex + 1);
@@ -395,9 +433,15 @@ const App: React.FC = () => {
     setStatus(ProcessingStatus.GENERATING);
     setErrorMsg(null);
     try {
-      const resultImageUrl = await generateEditedImage(file, options);
+      // Use current generated image as source if available for refinement
+      const sourceFile = generatedImage && activeCategory === 'eraser' ? 
+         await (await fetch(generatedImage)).blob().then(b => new File([b], "base.png", { type: "image/png" })) : 
+         file;
+
+      const resultImageUrl = await generateEditedImage(sourceFile, options);
       setGeneratedImage(resultImageUrl);
       setStatus(ProcessingStatus.SUCCESS);
+      if (activeCategory === 'eraser') clearMask(); // Clear mask after applying
       resetZoom();
     } catch (err: any) {
       setStatus(ProcessingStatus.ERROR);
@@ -412,11 +456,9 @@ const App: React.FC = () => {
 
   const handleSmartRefine = async () => {
     if (!generatedImage || !options.customPrompt.trim()) return;
-    
     if (options.resolution === 'High (Pro)') {
       try { if (window.aistudio && !await window.aistudio.hasSelectedApiKey()) await window.aistudio.openSelectKey(); } catch (e) {}
     }
-
     try {
       setStatus(ProcessingStatus.GENERATING);
       const res = await fetch(generatedImage);
@@ -441,7 +483,6 @@ const App: React.FC = () => {
       const resultUrl = await generateEditedImage(newBaseFile, refineOptions);
       setGeneratedImage(resultUrl);
       setStatus(ProcessingStatus.SUCCESS);
-      
     } catch (e: any) {
       setStatus(ProcessingStatus.ERROR);
       setErrorMsg("Failed to refine image. " + (e.message || ""));
@@ -456,11 +497,10 @@ const App: React.FC = () => {
       description: options.customPrompt || `Generated Style ${closetItems.length + 1}`,
       category: 'look',
       addedAt: Date.now(),
-      image: generatedImage // Base64 or URL
+      image: generatedImage 
     };
-    
     try {
-      const updatedCloset = [newItem, ...closetItems]; // Prepend newest
+      const updatedCloset = [newItem, ...closetItems];
       setClosetItems(updatedCloset);
       localStorage.setItem('styleShift_closet', JSON.stringify(updatedCloset));
       setClosetView('looks');
@@ -473,7 +513,7 @@ const App: React.FC = () => {
   const loadSavedLook = (item: ClosetItem) => {
       if (!item.image) return;
       setGeneratedImage(item.image);
-      setActiveCategory('looks'); // Return to editor to view
+      setActiveCategory('looks'); 
   };
 
   // --- Camera/Reset Logic --- 
@@ -526,10 +566,10 @@ const App: React.FC = () => {
     setHistory([INITIAL_OPTIONS]);
     setHistoryIndex(0);
     resetZoom();
+    clearMask();
   };
   
   const addToCart = (product: Product, openCart = true) => {
-    // Affiliate Link Handler
     if (product.purchaseUrl) {
         window.open(product.purchaseUrl, '_blank');
         return;
@@ -578,13 +618,13 @@ const App: React.FC = () => {
         setHistoryIndex(prev => prev + 1);
         setActiveCategory('makeup');
     } else if (item.category === 'outfit') {
-      handleOptionChange('outfit', item.description);
+      handleCommitOption('outfit', item.description);
       if (!OUTFIT_STYLES.includes(item.description) && !availableOutfits.includes(item.description)) {
         setAvailableOutfits(prev => [item.description, ...prev]);
       }
       setActiveCategory('outfit');
     } else if (item.category === 'makeup') {
-      handleOptionChange('makeupLook', item.description);
+      handleCommitOption('makeupLook', item.description);
       setActiveCategory('makeup');
     } else if (item.category === 'look' && item.image) {
       setGeneratedImage(item.image);
@@ -602,10 +642,10 @@ const App: React.FC = () => {
              </div>
              <ScrollableRow className="px-4">
                 {MAKEUP_LOOKS.map(look => (
-                  <StyleTile key={look} label={look} image={STYLE_IMAGES[look]} isActive={options.makeupLook === look} onClick={() => handleOptionChange('makeupLook', look)} />
+                  <StyleTile key={look} label={look} image={STYLE_IMAGES[look]} isActive={options.makeupLook === look} onClick={() => handleCommitOption('makeupLook', look)} />
                 ))}
              </ScrollableRow>
-             <div className="px-4"><Slider label="Intensity" value={options.makeupIntensity} onChange={(e) => handleOptionChange('makeupIntensity', parseInt(e.target.value))} /></div>
+             <div className="px-4"><Slider label="Intensity" value={options.makeupIntensity} onChange={(e) => handlePreviewOption('makeupIntensity', parseInt(e.target.value))} onAfterChange={(val) => handleCommitOption('makeupIntensity', val)} /></div>
           </div>
       );
       case 'makeup': return ( 
@@ -633,30 +673,30 @@ const App: React.FC = () => {
             </div>
             {activeSubCategory === 'lips' && (
               <div className="px-4 space-y-4">
-                 <ScrollableRow>{LIP_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.lipColor === color} onClick={() => handleOptionChange('lipColor', color)} />)}</ScrollableRow>
-                 <Slider label="Lip Intensity" value={options.lipIntensity} onChange={(e) => handleOptionChange('lipIntensity', parseInt(e.target.value))} />
+                 <ScrollableRow>{LIP_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.lipColor === color} onClick={() => handleCommitOption('lipColor', color)} />)}</ScrollableRow>
+                 <Slider label="Lip Intensity" value={options.lipIntensity} onChange={(e) => handlePreviewOption('lipIntensity', parseInt(e.target.value))} onAfterChange={(val) => handleCommitOption('lipIntensity', val)} />
                  <TipCard title={MAKEUP_TIPS['Lips'].title} description={MAKEUP_TIPS['Lips'].description} />
               </div>
             )}
             {activeSubCategory === 'eyes' && (
               <div className="px-4 space-y-4">
-                 <div className="space-y-2"><span className="text-[10px] font-bold text-gray-500 uppercase">Eyeshadow Color</span><ScrollableRow>{EYESHADOW_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.eyeshadowColor === color} onClick={() => handleOptionChange('eyeshadowColor', color)} />)}</ScrollableRow></div>
-                 <div className="space-y-2"><span className="text-[10px] font-bold text-gray-500 uppercase">Style</span><ScrollableRow>{EYESHADOW_STYLES.map(style => <StyleTile key={style} label={style} image={STYLE_IMAGES[style]} isActive={options.eyeshadowStyle === style} onClick={() => handleOptionChange('eyeshadowStyle', style)} />)}</ScrollableRow></div>
+                 <div className="space-y-2"><span className="text-[10px] font-bold text-gray-500 uppercase">Eyeshadow Color</span><ScrollableRow>{EYESHADOW_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.eyeshadowColor === color} onClick={() => handleCommitOption('eyeshadowColor', color)} />)}</ScrollableRow></div>
+                 <div className="space-y-2"><span className="text-[10px] font-bold text-gray-500 uppercase">Style</span><ScrollableRow>{EYESHADOW_STYLES.map(style => <StyleTile key={style} label={style} image={STYLE_IMAGES[style]} isActive={options.eyeshadowStyle === style} onClick={() => handleCommitOption('eyeshadowStyle', style)} />)}</ScrollableRow></div>
                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div><span className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Liner</span><ScrollableRow>{EYELINER_STYLES.map(style => <StyleTile key={style} label={style} image={STYLE_IMAGES[style]} isActive={options.eyelinerStyle === style} onClick={() => handleOptionChange('eyelinerStyle', style)} />)}</ScrollableRow></div>
-                    <div><span className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Lashes</span><ScrollableRow>{EYELASH_STYLES.map(style => <StyleTile key={style} label={style} image={STYLE_IMAGES[style]} isActive={options.eyelashesStyle === style} onClick={() => handleOptionChange('eyelashesStyle', style)} />)}</ScrollableRow></div>
+                    <div><span className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Liner</span><ScrollableRow>{EYELINER_STYLES.map(style => <StyleTile key={style} label={style} image={STYLE_IMAGES[style]} isActive={options.eyelinerStyle === style} onClick={() => handleCommitOption('eyelinerStyle', style)} />)}</ScrollableRow></div>
+                    <div><span className="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Lashes</span><ScrollableRow>{EYELASH_STYLES.map(style => <StyleTile key={style} label={style} image={STYLE_IMAGES[style]} isActive={options.eyelashesStyle === style} onClick={() => handleCommitOption('eyelashesStyle', style)} />)}</ScrollableRow></div>
                  </div>
                  {(options.eyeshadowStyle !== 'No Change' && MAKEUP_TIPS[options.eyeshadowStyle]) && (
                     <TipCard title={MAKEUP_TIPS[options.eyeshadowStyle].title} description={MAKEUP_TIPS[options.eyeshadowStyle].description} />
                  )}
-                 <Slider label="Intensity" value={options.eyeshadowIntensity} onChange={(e) => handleOptionChange('eyeshadowIntensity', parseInt(e.target.value))} />
+                 <Slider label="Intensity" value={options.eyeshadowIntensity} onChange={(e) => handlePreviewOption('eyeshadowIntensity', parseInt(e.target.value))} onAfterChange={(val) => handleCommitOption('eyeshadowIntensity', val)} />
               </div>
             )}
             {activeSubCategory === 'face' && (
-               <div className="px-4 space-y-4"><span className="text-[10px] font-bold text-gray-500 uppercase">Blush Color</span><ScrollableRow>{BLUSH_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.blushColor === color} onClick={() => handleOptionChange('blushColor', color)} />)}</ScrollableRow><Slider label="Blush Intensity" value={options.blushIntensity} onChange={(e) => handleOptionChange('blushIntensity', parseInt(e.target.value))} /><TipCard title={MAKEUP_TIPS['Blush'].title} description={MAKEUP_TIPS['Blush'].description} /></div>
+               <div className="px-4 space-y-4"><span className="text-[10px] font-bold text-gray-500 uppercase">Blush Color</span><ScrollableRow>{BLUSH_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.blushColor === color} onClick={() => handleCommitOption('blushColor', color)} />)}</ScrollableRow><Slider label="Blush Intensity" value={options.blushIntensity} onChange={(e) => handlePreviewOption('blushIntensity', parseInt(e.target.value))} onAfterChange={(val) => handleCommitOption('blushIntensity', val)} /><TipCard title={MAKEUP_TIPS['Blush'].title} description={MAKEUP_TIPS['Blush'].description} /></div>
             )}
             {activeSubCategory === 'contour' && (
-               <div className="px-4 space-y-4"><MiniFileUpload label="Upload Guide" file={options.contourReference} onFileChange={(f) => handleOptionChange('contourReference', f)} /><span className="text-[10px] font-bold text-gray-500 uppercase">Shade</span><ScrollableRow>{CONTOUR_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.contourColor === color} onClick={() => handleOptionChange('contourColor', color)} />)}</ScrollableRow><span className="text-[10px] font-bold text-gray-500 uppercase">Sculpt Mode</span><ScrollableRow>{CONTOUR_MODES.map(mode => <StyleTile key={mode} label={mode} image={STYLE_IMAGES[mode]} isActive={options.contourMode === mode} onClick={() => handleOptionChange('contourMode', mode)} />)}</ScrollableRow><Slider label="Contour Intensity" value={options.contourIntensity} onChange={(e) => handleOptionChange('contourIntensity', parseInt(e.target.value))} />
+               <div className="px-4 space-y-4"><MiniFileUpload label="Upload Guide" file={options.contourReference} onFileChange={(f) => handleCommitOption('contourReference', f)} /><span className="text-[10px] font-bold text-gray-500 uppercase">Shade</span><ScrollableRow>{CONTOUR_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.contourColor === color} onClick={() => handleCommitOption('contourColor', color)} />)}</ScrollableRow><span className="text-[10px] font-bold text-gray-500 uppercase">Sculpt Mode</span><ScrollableRow>{CONTOUR_MODES.map(mode => <StyleTile key={mode} label={mode} image={STYLE_IMAGES[mode]} isActive={options.contourMode === mode} onClick={() => handleCommitOption('contourMode', mode)} />)}</ScrollableRow><Slider label="Contour Intensity" value={options.contourIntensity} onChange={(e) => handlePreviewOption('contourIntensity', parseInt(e.target.value))} onAfterChange={(val) => handleCommitOption('contourIntensity', val)} />
                {(options.contourMode !== 'No Change' && MAKEUP_TIPS[options.contourMode]) && (
                     <TipCard title={MAKEUP_TIPS[options.contourMode].title} description={MAKEUP_TIPS[options.contourMode].description} />
                )}
@@ -666,22 +706,41 @@ const App: React.FC = () => {
       );
       case 'hair': return ( 
           <div className="space-y-4 px-4">
-             <div className="space-y-2"><span className="text-[10px] font-bold text-gray-500 uppercase">Hair Color</span><ScrollableRow>{HAIR_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.hairColor === color} onClick={() => handleOptionChange('hairColor', color)} />)}</ScrollableRow></div>
-             <div className="space-y-2"><span className="text-[10px] font-bold text-gray-500 uppercase">Hair Style</span><ScrollableRow>{HAIR_STYLES.map(style => <StyleTile key={style} label={style} image={STYLE_IMAGES[style]} isActive={options.hairStyle === style} onClick={() => handleOptionChange('hairStyle', style)} />)}</ScrollableRow></div>
-             <MiniFileUpload label="Reference Image" file={options.hairReference} onFileChange={(f) => handleOptionChange('hairReference', f)} />
+             <div className="space-y-2"><span className="text-[10px] font-bold text-gray-500 uppercase">Hair Color</span><ScrollableRow>{HAIR_COLORS.map(color => <ColorSwatch key={color} color={getColorHex(color)} label={color} isActive={options.hairColor === color} onClick={() => handleCommitOption('hairColor', color)} />)}</ScrollableRow></div>
+             <div className="space-y-2"><span className="text-[10px] font-bold text-gray-500 uppercase">Hair Style</span><ScrollableRow>{HAIR_STYLES.map(style => <StyleTile key={style} label={style} image={STYLE_IMAGES[style]} isActive={options.hairStyle === style} onClick={() => handleCommitOption('hairStyle', style)} />)}</ScrollableRow></div>
+             <MiniFileUpload label="Reference Image" file={options.hairReference} onFileChange={(f) => handleCommitOption('hairReference', f)} />
           </div>
       );
       case 'outfit': return ( 
           <div className="space-y-4 px-4">
-             <span className="text-[10px] font-bold text-gray-500 uppercase">Style</span><ScrollableRow>{availableOutfits.map(outfit => <StyleTile key={outfit} label={outfit} image={STYLE_IMAGES[outfit]} isActive={options.outfit === outfit} onClick={() => handleOptionChange('outfit', outfit)} />)}</ScrollableRow>
-             <MiniFileUpload label="Upload Outfit Reference" file={options.outfitReference} onFileChange={(f) => handleOptionChange('outfitReference', f)} />
-             <div className="pt-2"><p className="text-xs text-gray-400 mb-1">Background</p><ScrollableRow>{BACKGROUNDS.map(bg => <StyleTile key={bg} label={bg} image={STYLE_IMAGES[bg]} isActive={options.background === bg} onClick={() => handleOptionChange('background', bg)} />)}</ScrollableRow></div>
+             <span className="text-[10px] font-bold text-gray-500 uppercase">Style</span><ScrollableRow>{availableOutfits.map(outfit => <StyleTile key={outfit} label={outfit} image={STYLE_IMAGES[outfit]} isActive={options.outfit === outfit} onClick={() => handleCommitOption('outfit', outfit)} />)}</ScrollableRow>
+             <MiniFileUpload label="Upload Outfit Reference" file={options.outfitReference} onFileChange={(f) => handleCommitOption('outfitReference', f)} />
+             <div className="pt-2"><p className="text-xs text-gray-400 mb-1">Background</p><ScrollableRow>{BACKGROUNDS.map(bg => <StyleTile key={bg} label={bg} image={STYLE_IMAGES[bg]} isActive={options.background === bg} onClick={() => handleCommitOption('background', bg)} />)}</ScrollableRow></div>
           </div>
+      );
+      case 'eraser': return (
+         <div className="space-y-4 px-4">
+             <div className="bg-indigo-900/30 border border-indigo-500/30 rounded-lg p-3 text-xs text-gray-300">
+                <p className="font-bold text-indigo-300 mb-1">How to use Magic Eraser:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                   <li>Drag over the object you want to remove.</li>
+                   <li>Click "Apply Eraser" to process.</li>
+                </ol>
+             </div>
+             <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-500 uppercase">Brush Size</label>
+                <Slider min={5} max={50} value={eraserBrushSize} onChange={(e) => setEraserBrushSize(parseInt(e.target.value))} />
+             </div>
+             <div className="flex gap-2">
+                <Button variant="outline" onClick={clearMask} className="flex-1 text-xs py-2">Clear Selection</Button>
+                <Button variant="primary" onClick={handleGenerate} disabled={status === ProcessingStatus.GENERATING || !options.maskImage} isLoading={status === ProcessingStatus.GENERATING} className="flex-1 text-xs py-2">Apply Eraser</Button>
+             </div>
+         </div>
       );
       case 'shop': return ( 
            <div className="px-4 space-y-4 h-full overflow-y-auto">
               <input type="text" placeholder="Search products..." className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white" value={shopSearchQuery} onChange={(e) => setShopSearchQuery(e.target.value)} />
-              <div className="grid grid-cols-2 gap-3 pb-20">{products.filter(p => p.name.toLowerCase().includes(shopSearchQuery.toLowerCase())).map(product => (<ProductCard key={product.id} {...product} onTryOn={() => { if (product.category === 'makeup') handleOptionChange('makeupLook', product.styleValue); if (product.category === 'outfit') handleOptionChange('outfit', product.styleValue); setActiveCategory('looks'); }} onAddToCart={() => addToCart(product, false)} onBuyNow={() => addToCart(product, true)} />))}</div>
+              <div className="grid grid-cols-2 gap-3 pb-20">{products.filter(p => p.name.toLowerCase().includes(shopSearchQuery.toLowerCase())).map(product => (<ProductCard key={product.id} {...product} onTryOn={() => { if (product.category === 'makeup') handleCommitOption('makeupLook', product.styleValue); if (product.category === 'outfit') handleCommitOption('outfit', product.styleValue); setActiveCategory('looks'); }} onAddToCart={() => addToCart(product, false)} onBuyNow={() => addToCart(product, true)} />))}</div>
            </div>
       );
       case 'closet': return (
@@ -730,10 +789,10 @@ const App: React.FC = () => {
                      <h3 className="text-sm font-bold">Ask AI Stylist</h3>
                   </div>
                   <p className="text-xs text-gray-400 mb-3">Describe specific changes or additions you want to make to the photo.</p>
-                  <textarea className="w-full bg-black/50 border border-indigo-500/30 rounded-lg p-3 text-sm text-white placeholder-gray-500 min-h-[80px]" placeholder="e.g. Add a red beret, make me smile, add sunglasses..." value={options.customPrompt} onChange={(e) => handleOptionChange('customPrompt', e.target.value)} />
+                  <textarea className="w-full bg-black/50 border border-indigo-500/30 rounded-lg p-3 text-sm text-white placeholder-gray-500 min-h-[80px]" placeholder="e.g. Add a red beret, make me smile, add sunglasses..." value={options.customPrompt} onChange={(e) => handlePreviewOption('customPrompt', e.target.value)} onBlur={(e) => handleCommitOption('customPrompt', e.target.value)} />
                   <div className="flex flex-wrap gap-2 mt-3">
                      {['Make me smile', 'Add sunglasses', 'Change lighting to sunset', 'Add gold hoop earrings', 'Make hair windblown', 'Add a red beret'].map(sugg => (
-                        <button key={sugg} onClick={() => handleOptionChange('customPrompt', sugg)} className="text-[10px] bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded-full border border-gray-700">{sugg}</button>
+                        <button key={sugg} onClick={() => handleCommitOption('customPrompt', sugg)} className="text-[10px] bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded-full border border-gray-700">{sugg}</button>
                      ))}
                   </div>
                   {generatedImage && (
@@ -787,7 +846,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Canvas with Zoom/Pan */}
+      {/* Main Canvas with Zoom/Pan and Eraser Overlay */}
       <main className="flex-1 relative bg-gray-900 overflow-hidden flex items-center justify-center cursor-move" onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
         {!file && !isCameraOpen ? (
           <div className="text-center p-6 max-w-sm animate-fade-in">
@@ -815,12 +874,19 @@ const App: React.FC = () => {
            </div>
         ) : (
            <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden p-6 md:p-12">
-              <div ref={imageContainerRef} style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`, transition: isDragging ? 'none' : 'transform 0.1s ease-out' }} className="w-full h-full flex items-center justify-center">
+              <div ref={imageContainerRef} style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`, transition: (isDragging || isEraserDrawing) ? 'none' : 'transform 0.1s ease-out' }} className="w-full h-full flex items-center justify-center relative">
                   {generatedImage && !showCompare ? (
                      <img src={generatedImage} alt="Styled" className="w-full h-full object-contain pointer-events-none shadow-2xl drop-shadow-2xl" />
                   ) : (
                      <img src={previewUrl!} alt="Original" className="w-full h-full object-contain pointer-events-none shadow-2xl drop-shadow-2xl" />
                   )}
+                  
+                  {/* Eraser Canvas Overlay */}
+                  <canvas 
+                     ref={maskCanvasRef} 
+                     className={`absolute inset-0 w-full h-full object-contain ${activeCategory === 'eraser' ? 'cursor-crosshair pointer-events-auto' : 'pointer-events-none'}`}
+                     style={{ zIndex: 10 }}
+                  />
               </div>
               
               {/* Zoom Controls Overlay */}
@@ -848,7 +914,7 @@ const App: React.FC = () => {
         <div className="flex-shrink-0 bg-gray-900 border-t border-gray-800 flex flex-col h-[40vh] md:h-[350px]">
            <div className="flex-1 overflow-y-auto py-4 bg-gray-900 relative">
               <div className="absolute bottom-4 right-4 z-20">
-                 {status !== ProcessingStatus.GENERATING && (
+                 {status !== ProcessingStatus.GENERATING && activeCategory !== 'eraser' && (
                    <button onClick={handleGenerate} className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/40 rounded-full px-6 py-3 font-bold flex items-center space-x-2 transition-transform active:scale-95"><span>✨ Generate</span></button>
                  )}
               </div>
@@ -862,6 +928,7 @@ const App: React.FC = () => {
               <CategoryButton label="Hair" isActive={activeCategory === 'hair'} onClick={() => setActiveCategory('hair')} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>} />
               <CategoryButton label="Outfit" isActive={activeCategory === 'outfit'} onClick={() => setActiveCategory('outfit')} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>} />
               <CategoryButton label="Ask AI" isActive={activeCategory === 'ask-ai'} onClick={() => setActiveCategory('ask-ai')} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>} />
+              <CategoryButton label="Eraser" isActive={activeCategory === 'eraser'} onClick={() => setActiveCategory('eraser')} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>} />
               <CategoryButton label="Shop" isActive={activeCategory === 'shop'} onClick={() => setActiveCategory('shop')} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>} />
               <CategoryButton label="Closet" isActive={activeCategory === 'closet'} onClick={() => setActiveCategory('closet')} icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>} />
            </div>

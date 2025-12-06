@@ -206,31 +206,42 @@ interface SliderProps extends InputHTMLAttributes<HTMLInputElement> {
   min?: number;
   max?: number;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAfterChange?: (value: number) => void;
 }
 
-export const Slider: React.FC<SliderProps> = ({ label, value, min=0, max=100, onChange, ...props }) => (
-  <div className="flex flex-col space-y-2 w-full">
-    {label && (
-      <div className="flex justify-between items-center">
-        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</label>
-        <span className="text-xs font-mono text-indigo-400 bg-indigo-900/30 px-2 py-0.5 rounded">{value}%</span>
+export const Slider: React.FC<SliderProps> = ({ label, value, min=0, max=100, onChange, onAfterChange, ...props }) => {
+  const handleMouseUp = (e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) => {
+    if (onAfterChange) {
+      onAfterChange(Number(e.currentTarget.value));
+    }
+  };
+
+  return (
+    <div className="flex flex-col space-y-2 w-full">
+      {label && (
+        <div className="flex justify-between items-center">
+          <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</label>
+          <span className="text-xs font-mono text-indigo-400 bg-indigo-900/30 px-2 py-0.5 rounded">{value}%</span>
+        </div>
+      )}
+      <div className="relative w-full h-6 flex items-center">
+        <input 
+          type="range" 
+          min={min} 
+          max={max} 
+          value={value} 
+          onChange={onChange}
+          onMouseUp={handleMouseUp}
+          onTouchEnd={handleMouseUp}
+          className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 focus:outline-none focus:ring-0 z-10"
+          {...props}
+        />
+        {/* Track Background Visual */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-gray-700 to-indigo-900/50 w-full rounded-lg pointer-events-none"></div>
       </div>
-    )}
-    <div className="relative w-full h-6 flex items-center">
-      <input 
-        type="range" 
-        min={min} 
-        max={max} 
-        value={value} 
-        onChange={onChange}
-        className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 focus:outline-none focus:ring-0 z-10"
-        {...props}
-      />
-      {/* Track Background Visual */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-gray-700 to-indigo-900/50 w-full rounded-lg pointer-events-none"></div>
     </div>
-  </div>
-);
+  );
+};
 
 // --- Card Components ---
 export const Card: React.FC<{ children: ReactNode; className?: string }> = ({ children, className = '' }) => (

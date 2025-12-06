@@ -1,5 +1,4 @@
 
-
 export interface EditOptions {
   hairColor: string;
   hairStyle: string;
@@ -21,6 +20,9 @@ export interface EditOptions {
   contourIntensity: number; // Used for blending/opacity
   contourReference?: File | null; // Specific file for placement guide
   
+  // Magic Eraser
+  maskImage?: File | null; // The generated mask from canvas
+
   // Legacy/Fallback field
   makeupLook: string;
   makeupIntensity: number; // 0 to 100
@@ -201,5 +203,6 @@ export const MOCK_PRODUCTS: Product[] = [
 declare global {
   interface Window {
     paypal: any;
+    // aistudio is intentionally omitted to avoid conflict with ambient declaration
   }
 }

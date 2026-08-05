@@ -1,6 +1,6 @@
 {
-  "name": "StyleShift AI",
-  "description": "An AI-powered personal stylist editor. Upload your selfie to experiment with new hairstyles, makeup looks, outfits, and backgrounds while keeping your unique facial features.",
+  "name": "StyleShift",
+  "description": "A lightweight AI style & beauty app. Upload a selfie, describe a new look (hair, makeup, or outfit), and see it on you instantly. Save outfits to your closet and try them on virtually.",
   "requestFramePermissions": [
     "camera"
   ]

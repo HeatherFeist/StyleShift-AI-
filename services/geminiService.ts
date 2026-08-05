@@ -39,7 +39,22 @@ export const setApiKey = (key: string): void => {
   }
 };
 
-export const hasApiKey = (): boolean => Boolean(getApiKey());
+/**
+ * When the app is built with VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY, all
+ * generation is routed through the Supabase Edge Function, which holds the
+ * Gemini key server-side. No client key is needed in that mode.
+ */
+const getSupabaseConfig = (): { url: string; anon: string } | null => {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (url && anon) return { url: String(url).replace(/\/+$/, ''), anon: String(anon) };
+  return null;
+};
+
+export const isBackendMode = (): boolean => getSupabaseConfig() !== null;
+
+/** The app is ready to generate if a backend is wired up OR a client key exists. */
+export const hasApiKey = (): boolean => isBackendMode() || Boolean(getApiKey());
 
 /** Convert a File to the { mimeType, data } shape the API expects. */
 const fileToPart = async (
@@ -122,6 +137,20 @@ const IDENTITY_RULES = [
   'Keep the result photorealistic with natural, believable lighting.',
 ].join(' ');
 
+/** Assemble the instruction text shared by both generation modes. */
+const buildInstructions = (prompt: string, hasOutfit: boolean): string => {
+  let instructions = IDENTITY_RULES;
+  if (hasOutfit) {
+    instructions +=
+      ' The SECOND image is an OUTFIT REFERENCE. Take ONLY the clothing/outfit from it (ignore any person, body shape, or face in that image) and dress the person from the selfie in it, fitting it naturally to their pose and body.';
+  }
+  instructions += ` USER REQUEST: ${
+    prompt.trim() || 'Refresh the styling while keeping everything else natural.'
+  }`;
+  instructions += ' OUTPUT: a single high-quality, photorealistic image.';
+  return instructions;
+};
+
 /**
  * Generate a re-styled image of the user.
  *
@@ -129,11 +158,61 @@ const IDENTITY_RULES = [
  * @param prompt     free-text description of the desired look
  * @param outfitRef  optional outfit/style reference (a File upload or a data URL
  *                   from the closet). When present, the AI dresses the user in it.
+ *
+ * Routes through the Supabase Edge Function when the app is configured with one
+ * (key stays server-side); otherwise calls Gemini directly with a client key.
  */
 export const generateStyledImage = async (
   selfie: File,
   prompt: string,
   outfitRef?: File | string | null,
+): Promise<string> => {
+  const selfiePart = await fileToPart(selfie);
+  const outfitPart = outfitRef
+    ? typeof outfitRef === 'string'
+      ? dataUrlToPart(outfitRef)
+      : await fileToPart(outfitRef)
+    : null;
+
+  const backend = getSupabaseConfig();
+  return backend
+    ? generateViaBackend(backend, prompt, selfiePart, outfitPart)
+    : generateDirect(prompt, selfiePart, outfitPart);
+};
+
+/** Production path: the Supabase Edge Function holds the Gemini key. */
+const generateViaBackend = async (
+  backend: { url: string; anon: string },
+  prompt: string,
+  selfie: { mimeType: string; data: string },
+  outfit: { mimeType: string; data: string } | null,
+): Promise<string> => {
+  let res: Response;
+  try {
+    res = await fetch(`${backend.url}/functions/v1/generate-look`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${backend.anon}`,
+        apikey: backend.anon,
+      },
+      body: JSON.stringify({ prompt, selfie, outfit: outfit || undefined }),
+    });
+  } catch (err) {
+    throw new Error(`Couldn't reach the styling service: ${String(err)}`);
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.image) {
+    throw new Error(data.error || `Styling service error (${res.status}).`);
+  }
+  return data.image as string;
+};
+
+/** Local / no-backend path: call Gemini straight from the browser. */
+const generateDirect = async (
+  prompt: string,
+  selfie: { mimeType: string; data: string },
+  outfit: { mimeType: string; data: string } | null,
 ): Promise<string> => {
   const apiKey = getApiKey();
   if (!apiKey) {
@@ -143,30 +222,9 @@ export const generateStyledImage = async (
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const parts: any[] = [];
-
-  // 1. Base selfie.
-  parts.push({ inlineData: await fileToPart(selfie) });
-
-  // 2. Optional outfit reference.
-  let instructions = IDENTITY_RULES;
-  if (outfitRef) {
-    const refPart =
-      typeof outfitRef === 'string'
-        ? dataUrlToPart(outfitRef)
-        : await fileToPart(outfitRef);
-    parts.push({ inlineData: refPart });
-    instructions +=
-      ' The SECOND image is an OUTFIT REFERENCE. Take ONLY the clothing/outfit from it (ignore any person, body shape, or face in that image) and dress the person from the selfie in it, fitting it naturally to their pose and body.';
-  }
-
-  // 3. The user's request.
-  instructions += ` USER REQUEST: ${
-    prompt.trim() || 'Refresh the styling while keeping everything else natural.'
-  }`;
-  instructions += ' OUTPUT: a single high-quality, photorealistic image.';
-
-  parts.push({ text: instructions });
+  const parts: any[] = [{ inlineData: selfie }];
+  if (outfit) parts.push({ inlineData: outfit });
+  parts.push({ text: buildInstructions(prompt, Boolean(outfit)) });
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',

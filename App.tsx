@@ -9,6 +9,7 @@ import {
   generateStyledImage,
   hasApiKey,
   setApiKey,
+  isBackendMode,
 } from './services/geminiService';
 import {
   Button,
@@ -587,6 +588,13 @@ const App: React.FC = () => {
         onClose={() => setShowSettings(false)}
         title="Settings"
       >
+        {isBackendMode() ? (
+          <p className="text-sm text-gray-600">
+            This app is connected to a secure backend that keeps the Gemini key
+            on the server — you don't need to enter anything here to create looks.
+          </p>
+        ) : (
+        <>
         <p className="text-sm text-gray-600">
           StyleShift uses Google Gemini to create your looks. Paste your API key
           below — it stays in this browser only.
@@ -618,6 +626,8 @@ const App: React.FC = () => {
             Save
           </Button>
         </div>
+        </>
+        )}
       </Modal>
     </div>
   );

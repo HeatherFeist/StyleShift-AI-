@@ -1,0 +1,2 @@
+# SPA fallback. Pages Functions (/api/*) are matched before this file.
+/*    /index.html   200

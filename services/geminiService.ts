@@ -253,9 +253,6 @@ export const generateEditedImage = async (
   imageFile: File,
   options: EditOptions
 ): Promise<string> => {
-  // Initialize client here to ensure we capture the latest API key if it changed
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
   try {
     // 1. Prepare Parts Array (Base Image + References)
     const parts: any[] = [];
@@ -312,9 +309,6 @@ export const generateEditedImage = async (
     // 3. Add Text Instructions (buildPrompt handles skipping text logic if refs exist)
     prompt += buildPrompt(options);
 
-    console.log("Sending prompt to Gemini:", prompt);
-    console.log(`Total images sent: ${parts.length}`);
-
     // Append the full text prompt to parts
     parts.push({ text: prompt });
 
@@ -323,12 +317,18 @@ export const generateEditedImage = async (
     const model = isHighRes ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
     
     // Config for image generation parameters
-    const config: any = {};
+    const config: Record<string, unknown> = {};
     if (isHighRes) {
        // Gemini 3 Pro supports explicit image size configuration
        config.imageConfig = { imageSize: '2K' };
     }
 
+    const useProxy = import.meta.env.PROD || import.meta.env.VITE_USE_GENERATE_PROXY === 'true';
+    if (useProxy) {
+      return generateViaProxy(model, parts, config);
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: model,
       contents: {
@@ -346,6 +346,37 @@ export const generateEditedImage = async (
 };
 
 // Helper for natural language indexing
+const ALLOWED_MODELS = ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'] as const;
+
+/**
+ * Production path: Cloudflare Pages Function holds GEMINI_API_KEY.
+ * The browser never receives the key.
+ */
+const generateViaProxy = async (
+  model: string,
+  parts: unknown[],
+  config: Record<string, unknown>
+): Promise<string> => {
+  if (!ALLOWED_MODELS.includes(model as (typeof ALLOWED_MODELS)[number])) {
+    throw new Error('Unsupported generation model.');
+  }
+
+  const response = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, parts, config }),
+  });
+
+  const payload = await response.json().catch(() => ({} as { error?: string }));
+  if (!response.ok) {
+    const error = new Error(payload.error || `Generate failed (${response.status})`) as Error & { status?: number };
+    error.status = response.status;
+    throw error;
+  }
+
+  return extractImageFromResponse(payload);
+};
+
 const getOrdinal = (n: number): string => {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
@@ -356,13 +387,15 @@ const getOrdinal = (n: number): string => {
  * Generates a preview image of an outfit based on a text description.
  */
 export const generateOutfitPreview = async (description: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
   try {
     const prompt = `Generate a high-quality, photorealistic fashion photography shot of a mannequin or model wearing the following outfit: "${description}". The image should focus on the clothing details. Use a neutral studio background.`;
     
-    console.log("Generating outfit preview for:", description);
+    const useProxy = import.meta.env.PROD || import.meta.env.VITE_USE_GENERATE_PROXY === 'true';
+    if (useProxy) {
+      return generateViaProxy('gemini-2.5-flash-image', [{ text: prompt }], {});
+    }
 
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {

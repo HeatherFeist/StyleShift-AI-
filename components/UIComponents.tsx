@@ -1,5 +1,5 @@
 
-import React, { InputHTMLAttributes, SelectHTMLAttributes, ReactNode, useRef, useState, useEffect } from 'react';
+import React, { InputHTMLAttributes, SelectHTMLAttributes, ReactNode, useRef } from 'react';
 import { CartItem, OrderStatus } from '../types';
 
 // --- Button ---
@@ -382,6 +382,7 @@ interface ProductCardProps {
   imageUrl?: string;
   supplierSku?: string;
   purchaseUrl?: string;
+  tryOn?: { label: string };
   onTryOn: () => void;
   onAddToCart: () => void;
   onBuyNow: () => void;
@@ -395,6 +396,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   imageUrl, 
   supplierSku,
   purchaseUrl,
+  tryOn,
   onTryOn,
   onAddToCart,
   onBuyNow
@@ -424,6 +426,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="p-3 flex-1 flex flex-col">
         <div className="mb-1">
            <h4 className="text-sm font-semibold text-white leading-tight line-clamp-1">{name}</h4>
+           {tryOn?.label && (
+             <p className="text-[10px] text-indigo-300 mt-0.5">Try on: {tryOn.label}</p>
+           )}
            {supplierSku && (
              <p className="text-[10px] text-gray-500 font-mono mt-0.5">SKU: {supplierSku}</p>
            )}
@@ -452,7 +457,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             onClick={onBuyNow}
             className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs py-2 rounded font-bold shadow-lg shadow-indigo-900/20 transition-all transform active:scale-95"
           >
-            Buy Now
+            {purchaseUrl ? 'Buy on retailer' : 'Buy Now'}
           </button>
         </div>
       </div>
@@ -536,155 +541,72 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange }) => (
   </div>
 );
 
-// --- PayPal Buttons ---
-export const PayPalButtons: React.FC<{ amount: number; onSuccess: () => void }> = ({ amount, onSuccess }) => {
-  const buttonRef = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState(false);
-  const [isSdkReady, setIsSdkReady] = useState(false);
-  const buttonsInstance = useRef<any>(null); 
-  
-  const onSuccessRef = useRef(onSuccess);
-  const amountRef = useRef(amount);
+export const CompareSlider: React.FC<{
+  originalSrc: string;
+  editedSrc: string;
+  position: number;
+  onPositionChange: (value: number) => void;
+}> = ({ originalSrc, editedSrc, position, onPositionChange }) => {
+  const trackRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    onSuccessRef.current = onSuccess;
-    amountRef.current = amount;
-  }, [onSuccess, amount]);
+  const setFromClientX = (clientX: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const rect = track.getBoundingClientRect();
+    const next = ((clientX - rect.left) / rect.width) * 100;
+    onPositionChange(Math.min(100, Math.max(0, next)));
+  };
 
-  useEffect(() => {
-    if (window.paypal) {
-      setIsSdkReady(true);
-      return;
-    }
-    const interval = setInterval(() => {
-      if (window.paypal) {
-        setIsSdkReady(true);
-        clearInterval(interval);
-      }
-    }, 500);
-    
-    // Timeout to prevent infinite checking
-    const timeout = setTimeout(() => {
-        clearInterval(interval);
-        if (!window.paypal) {
-            console.error("PayPal SDK load timeout");
-            setError(true);
-        }
-    }, 10000);
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    (event.currentTarget as HTMLDivElement).setPointerCapture(event.pointerId);
+    setFromClientX(event.clientX);
+  };
 
-    return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-    };
-  }, []);
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setFromClientX(event.clientX);
+  };
 
-  useEffect(() => {
-    if (!isSdkReady || error) return;
-    
-    const container = buttonRef.current;
-    if (!container) return;
-
-    // Robust cleanup
-    if (buttonsInstance.current) {
-        try { 
-            if (buttonsInstance.current.close) buttonsInstance.current.close(); 
-        } catch (e) { /* ignore */ }
-        buttonsInstance.current = null;
-    }
-    container.innerHTML = "";
-    
-    let isCancelled = false;
-
-    const renderButtons = async () => {
-        try {
-            if (!window.paypal) {
-                throw new Error("PayPal object missing");
-            }
-            
-            // Wait a tick to ensure DOM is ready
-            await new Promise(r => setTimeout(r, 0));
-            if (isCancelled) return;
-
-            const buttons = window.paypal.Buttons({
-                style: { layout: 'vertical', color: 'blue', shape: 'rect', label: 'checkout' },
-                createOrder: (data: any, actions: any) => {
-                    return actions.order.create({
-                        purchase_units: [{
-                            amount: { value: amountRef.current.toFixed(2) }
-                        }]
-                    }).catch((err: any) => {
-                        console.error("CreateOrder Error", err);
-                        // Don't throw here to avoid unhandled exception bubbling, just log
-                        // The onError handler usually catches the fallout
-                        return null; 
-                    });
-                },
-                onApprove: (data: any, actions: any) => {
-                    return actions.order.capture().then((details: any) => {
-                        console.log('Transaction completed by ' + details.payer.name.given_name);
-                        if (!isCancelled) onSuccessRef.current();
-                    }).catch((err: any) => {
-                         console.error("Capture Error", err);
-                    });
-                },
-                onError: (err: any) => {
-                    console.error("PayPal Error Event:", err);
-                    if (!isCancelled) setError(true);
-                }
-            });
-
-            buttonsInstance.current = buttons;
-
-            if (buttons.isEligible()) {
-                await buttons.render(container).catch((err: any) => {
-                     console.error("PayPal Render Error:", err);
-                     if (!isCancelled) setError(true);
-                });
-            } else {
-                console.warn("PayPal not eligible");
-                if (!isCancelled) setError(true);
-            }
-        } catch (err) {
-            console.error("PayPal Init Error:", err);
-            if (!isCancelled) setError(true);
-        }
-    };
-
-    renderButtons();
-
-    return () => {
-        isCancelled = true;
-        if (buttonsInstance.current) {
-            try { 
-                if(buttonsInstance.current.close) buttonsInstance.current.close(); 
-            } catch (e) {}
-            buttonsInstance.current = null;
-        }
-        // Don't clear innerHTML here to prevent flickering if re-rendering quickly, 
-        // let the next effect run clear it.
-    };
-
-  }, [isSdkReady, error, amount]); 
-
-  if (error) {
-    return (
-      <div className="space-y-2">
-          <div className="bg-red-500/10 border border-red-500/30 rounded p-2 text-[10px] text-red-200 text-center">
-              Payment Gateway Unavailable (Demo Mode)
-          </div>
-          <Button 
-            variant="primary" 
-            onClick={onSuccess} 
-            className="w-full"
-          >
-            Pay ${amount.toFixed(2)} (Simulated)
-          </Button>
+  return (
+    <div
+      ref={trackRef}
+      className="relative w-full h-full select-none touch-none"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={(event) => event.currentTarget.releasePointerCapture(event.pointerId)}
+    >
+      <img src={originalSrc} alt="Original" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}>
+        <img src={editedSrc} alt="Edited" className="absolute inset-0 w-full h-full object-contain" />
       </div>
-    );
-  }
-
-  return <div ref={buttonRef} className="w-full relative z-0 min-h-[150px]" />;
+      <div
+        className="absolute top-0 bottom-0 w-0.5 bg-white pointer-events-none"
+        style={{ left: `${position}%` }}
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/70 border border-white flex items-center justify-center text-white text-[10px] font-bold">
+          {Math.round(position)}
+        </div>
+      </div>
+      <span className="absolute top-3 left-3 bg-black/60 px-2 py-0.5 rounded text-[10px] uppercase tracking-wide">Original</span>
+      <span className="absolute top-3 right-3 bg-black/60 px-2 py-0.5 rounded text-[10px] uppercase tracking-wide">After</span>
+    </div>
+  );
 };
+
+export const DemoCheckoutButton: React.FC<{ amount: number; onConfirm: () => void }> = ({ amount, onConfirm }) => (
+  <div className="space-y-3">
+    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-[11px] text-amber-100 leading-relaxed">
+      Demo checkout only. No payment is captured and nothing will be shipped.
+    </div>
+    <Button variant="primary" onClick={onConfirm} className="w-full">
+      Complete demo checkout · ${amount.toFixed(2)}
+    </Button>
+  </div>
+);
 
 // --- Cart Sidebar ---
 interface CartSidebarProps {
@@ -786,38 +708,33 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                    <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                    </div>
-                   <h3 className="text-xl font-bold text-white">Order Processing</h3>
-                   <p className="text-sm text-gray-400">Sit tight, we're automating your shipment.</p>
+                   <h3 className="text-xl font-bold text-white">Demo checkout</h3>
+                   <p className="text-sm text-gray-400">This is a simulation. No charge, no shipment.</p>
                  </div>
 
                  <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-5">
                     <Step 
-                      label="Payment Processing" 
-                      active={orderStatus === OrderStatus.PROCESSING_PAYMENT} 
-                      completed={orderStatus !== OrderStatus.PROCESSING_PAYMENT}
+                      label="Demo bag recorded" 
+                      active={orderStatus === OrderStatus.DEMO_PROCESSING} 
+                      completed={orderStatus === OrderStatus.DEMO_COMPLETE}
                     />
                     <Step 
-                      label="Order Sent to Supplier System" 
-                      active={orderStatus === OrderStatus.SENDING_TO_SUPPLIER} 
-                      completed={[OrderStatus.SUPPLIER_CONFIRMED, OrderStatus.SHIPPED].includes(orderStatus)}
-                    />
-                    <Step 
-                      label="Supplier Confirmation Received" 
-                      active={orderStatus === OrderStatus.SUPPLIER_CONFIRMED} 
-                      completed={orderStatus === OrderStatus.SHIPPED}
-                    />
-                    <Step 
-                      label="Shipped to Buyer" 
+                      label="No payment captured" 
                       active={false} 
-                      completed={orderStatus === OrderStatus.SHIPPED}
+                      completed={orderStatus === OrderStatus.DEMO_COMPLETE}
+                    />
+                    <Step 
+                      label="Nothing shipped" 
+                      active={false} 
+                      completed={orderStatus === OrderStatus.DEMO_COMPLETE}
                     />
                  </div>
 
-                 {orderStatus === OrderStatus.SHIPPED && (
-                   <div className="bg-green-900/30 border border-green-800 rounded-lg p-4 text-center animate-fade-in">
-                      <p className="text-green-300 font-medium mb-1">Success!</p>
-                      <p className="text-xs text-green-400/80">Your order has been automatically routed and shipped.</p>
-                      <Button onClick={onClose} className="mt-4 w-full" variant="success">Continue Shopping</Button>
+                 {orderStatus === OrderStatus.DEMO_COMPLETE && (
+                   <div className="bg-amber-900/30 border border-amber-800 rounded-lg p-4 text-center animate-fade-in">
+                      <p className="text-amber-200 font-medium mb-1">Demo complete</p>
+                      <p className="text-xs text-amber-200/80">No order was placed. Connect a merchant backend before taking real payments.</p>
+                      <Button onClick={onClose} className="mt-4 w-full" variant="success">Back to editor</Button>
                    </div>
                  )}
               </div>
@@ -833,13 +750,9 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                  <span className="text-xl font-bold text-white">${total.toFixed(2)}</span>
                </div>
                
-               {/* PayPal Integration */}
-               <div className="w-full relative z-0">
-                  <PayPalButtons amount={total} onSuccess={onCheckout} />
-               </div>
-               
+               <DemoCheckoutButton amount={total} onConfirm={onCheckout} />
                <p className="text-[10px] text-gray-500 text-center mt-3">
-                 Secure checkout powered by PayPal. Orders are automatically fulfilled.
+                 StyleShift checkout is a demo. Retailer links open in a new tab and are not StyleShift orders.
                </p>
             </div>
           )}

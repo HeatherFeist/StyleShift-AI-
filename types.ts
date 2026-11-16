@@ -59,16 +59,29 @@ export interface ClosetItem {
   customData?: Partial<EditOptions>;
 }
 
+export type EditorTab = 'looks' | 'makeup' | 'hair' | 'outfit';
+export type MakeupSubCategory = 'lips' | 'eyes' | 'face' | 'contour';
+
+/** Which editor controls a shop product should actually write. */
+export interface ProductTryOn {
+  category: EditorTab;
+  subCategory?: MakeupSubCategory;
+  /** Human-readable slot, e.g. "Lips · Red matte" */
+  label: string;
+  options: Partial<EditOptions>;
+}
+
 export interface Product {
   id: string;
   name: string;
   category: 'outfit' | 'makeup' | 'hair';
   price: number;
   imageUrl?: string; // URL to the product image
-  styleValue: string; // The value to apply to the styling option (e.g., description of the item)
+  styleValue: string; // Legacy preset name; prefer `tryOn.options`
   description: string;
   supplierSku?: string; // The unique product number for ordering
-  purchaseUrl?: string; // External link to buy the product (optional now)
+  purchaseUrl?: string; // External retailer link (affiliate / Amazon, etc.)
+  tryOn?: ProductTryOn;
 }
 
 export interface CartItem extends Product {
@@ -86,11 +99,8 @@ export enum ProcessingStatus {
 
 export enum OrderStatus {
   IDLE = 'IDLE',
-  PROCESSING_PAYMENT = 'PROCESSING_PAYMENT',
-  PAYMENT_CONFIRMED = 'PAYMENT_CONFIRMED',
-  SENDING_TO_SUPPLIER = 'SENDING_TO_SUPPLIER',
-  SUPPLIER_CONFIRMED = 'SUPPLIER_CONFIRMED',
-  SHIPPED = 'SHIPPED',
+  DEMO_PROCESSING = 'DEMO_PROCESSING',
+  DEMO_COMPLETE = 'DEMO_COMPLETE',
 }
 
 export const RESOLUTION_OPTIONS = [
@@ -178,31 +188,152 @@ export const BACKGROUNDS = [
 ];
 
 export const MOCK_PRODUCTS: Product[] = [
-  // --- USER INVENTORY START ---
-  { 
-    id: 'heatherfeist-20', 
-    name: 'Highlighter Makeup Powder', 
-    category: 'makeup', 
-    price: 14.99, 
-    styleValue: 'Highlighter', 
+  {
+    id: 'heatherfeist-20',
+    name: 'Highlighter Makeup Powder',
+    category: 'makeup',
+    price: 14.99,
+    styleValue: 'Highlighter',
     description: '8-Color Highlighter Palette - Waterproof Long-Lasting Matte & Shimmer Finish.',
-    supplierSku: 'https://amzn.to/443MzpL', 
+    supplierSku: 'HF-HL-20',
+    purchaseUrl: 'https://amzn.to/443MzpL',
+    tryOn: {
+      category: 'makeup',
+      subCategory: 'face',
+      label: 'Face · Highlighter',
+      options: {
+        customPrompt:
+          'Apply a natural highlighter powder to the high points of the face: cheekbones, brow bone, bridge of the nose, and cupid\'s bow. Do not change identity, skin tone, or the rest of the makeup.',
+      },
+    },
   },
-  // --- USER INVENTORY END ---
-
-  { id: 'p1', name: 'Midnight Velvet Gown', category: 'outfit', price: 299, styleValue: 'Evening Gown', description: 'Elegant floor-length velvet gown.', supplierSku: 'DRESS-001' },
-  { id: 'p2', name: 'Urban Tech Jacket', category: 'outfit', price: 150, styleValue: 'Cyberpunk Techwear', description: 'Waterproof shell with neon accents.', supplierSku: 'JKT-TECH-99' },
-  { id: 'p3', name: 'Vintage Denim Set', category: 'outfit', price: 89, styleValue: 'Vintage 90s', description: 'Classic high-waisted jeans and jacket.', supplierSku: 'DNM-SET-90' },
-  { id: 'p4', name: 'Ruby Woo Lipstick', category: 'makeup', price: 25, styleValue: 'Red', description: 'Iconic matte vivid red lipstick.', supplierSku: 'LIP-RED-01' },
-  { id: 'p5', name: 'Smokey Eye Palette', category: 'makeup', price: 45, styleValue: 'Smokey Black', description: 'Deep charcoals and shimmers.', supplierSku: 'EYE-SMK-05' },
-  { id: 'p6', name: 'Boho Floral Dress', category: 'outfit', price: 75, styleValue: 'Summer Dress', description: 'Lightweight floral print with ruffles.', supplierSku: 'DRS-FLR-22' },
-  { id: 'p7', name: 'Executive Blazer', category: 'outfit', price: 199, styleValue: 'Business Suit', description: 'Tailored fit navy blazer.', supplierSku: 'BLZ-NAVY-01' },
-  { id: 'p8', name: 'Goth Choker & Liner', category: 'makeup', price: 35, styleValue: 'Goth', description: 'Heavy eyeliner kit with velvet choker.', supplierSku: 'ACC-GOTH-66' },
+  {
+    id: 'p1',
+    name: 'Midnight Velvet Gown',
+    category: 'outfit',
+    price: 299,
+    styleValue: 'Evening Gown',
+    description: 'Elegant floor-length velvet gown.',
+    supplierSku: 'DRESS-001',
+    imageUrl: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=300&q=80',
+    tryOn: {
+      category: 'outfit',
+      label: 'Outfit · Evening Gown',
+      options: { outfit: 'Evening Gown' },
+    },
+  },
+  {
+    id: 'p2',
+    name: 'Urban Tech Jacket',
+    category: 'outfit',
+    price: 150,
+    styleValue: 'Cyberpunk Techwear',
+    description: 'Waterproof shell with neon accents.',
+    supplierSku: 'JKT-TECH-99',
+    imageUrl: 'https://images.unsplash.com/photo-1614726365723-49fb6b00918c?w=300&q=80',
+    tryOn: {
+      category: 'outfit',
+      label: 'Outfit · Cyberpunk Techwear',
+      options: { outfit: 'Cyberpunk Techwear' },
+    },
+  },
+  {
+    id: 'p3',
+    name: 'Vintage Denim Set',
+    category: 'outfit',
+    price: 89,
+    styleValue: 'Vintage 90s',
+    description: 'Classic high-waisted jeans and jacket.',
+    supplierSku: 'DNM-SET-90',
+    imageUrl: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=300&q=80',
+    tryOn: {
+      category: 'outfit',
+      label: 'Outfit · Vintage 90s',
+      options: { outfit: 'Vintage 90s' },
+    },
+  },
+  {
+    id: 'p4',
+    name: 'Ruby Woo Lipstick',
+    category: 'makeup',
+    price: 25,
+    styleValue: 'Red',
+    description: 'Iconic matte vivid red lipstick.',
+    supplierSku: 'LIP-RED-01',
+    tryOn: {
+      category: 'makeup',
+      subCategory: 'lips',
+      label: 'Lips · Red matte',
+      options: { lipColor: 'Red', lipIntensity: 85 },
+    },
+  },
+  {
+    id: 'p5',
+    name: 'Smokey Eye Palette',
+    category: 'makeup',
+    price: 45,
+    styleValue: 'Smokey Black',
+    description: 'Deep charcoals and shimmers.',
+    supplierSku: 'EYE-SMK-05',
+    tryOn: {
+      category: 'makeup',
+      subCategory: 'eyes',
+      label: 'Eyes · Smokey Black',
+      options: { eyeshadowColor: 'Smokey Black', eyeshadowStyle: 'Smokey Eye', eyeshadowIntensity: 75 },
+    },
+  },
+  {
+    id: 'p6',
+    name: 'Boho Floral Dress',
+    category: 'outfit',
+    price: 75,
+    styleValue: 'Summer Dress',
+    description: 'Lightweight floral print with ruffles.',
+    supplierSku: 'DRS-FLR-22',
+    imageUrl: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=300&q=80',
+    tryOn: {
+      category: 'outfit',
+      label: 'Outfit · Summer Dress',
+      options: { outfit: 'Summer Dress' },
+    },
+  },
+  {
+    id: 'p7',
+    name: 'Executive Blazer',
+    category: 'outfit',
+    price: 199,
+    styleValue: 'Business Suit',
+    description: 'Tailored fit navy blazer.',
+    supplierSku: 'BLZ-NAVY-01',
+    imageUrl: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=300&q=80',
+    tryOn: {
+      category: 'outfit',
+      label: 'Outfit · Business Suit',
+      options: { outfit: 'Business Suit' },
+    },
+  },
+  {
+    id: 'p8',
+    name: 'Goth Choker & Liner',
+    category: 'makeup',
+    price: 35,
+    styleValue: 'Goth',
+    description: 'Heavy eyeliner kit with velvet choker.',
+    supplierSku: 'ACC-GOTH-66',
+    tryOn: {
+      category: 'looks',
+      label: 'Look · Goth',
+      options: { makeupLook: 'Goth' },
+    },
+  },
 ];
 
 declare global {
   interface Window {
-    paypal: any;
-    // aistudio is intentionally omitted to avoid conflict with ambient declaration
+    paypal?: any;
+    aistudio?: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
   }
 }

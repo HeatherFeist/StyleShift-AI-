@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   ProcessingStatus, 
   EditOptions, 
-  SavedStyle,
   ClosetItem,
   Product,
   CartItem,
@@ -21,21 +20,17 @@ import {
   CONTOUR_MODES,
   OUTFIT_STYLES, 
   BACKGROUNDS,
-  RESOLUTION_OPTIONS,
   STYLE_STRENGTH_OPTIONS,
   MOCK_PRODUCTS
 } from './types';
-import { generateEditedImage, generateOutfitPreview } from './services/geminiService';
+import { generateEditedImage } from './services/geminiService';
+import { downloadLook, shareLook } from './services/exportLook';
+import { applyTryOnOptions, getProductTryOn } from './services/tryOn';
 import { 
   Button, 
-  SelectGroup, 
   Slider, 
-  Card, 
-  CardHeader, 
-  CardContent, 
   Alert, 
   MiniFileUpload, 
-  Tabs, 
   ProductCard, 
   ClosetItemCard, 
   CartSidebar, 
@@ -43,7 +38,8 @@ import {
   ColorSwatch,
   StyleTile,
   CategoryButton,
-  ScrollableRow
+  ScrollableRow,
+  CompareSlider
 } from './components/UIComponents';
 
 // ... (Keep Educational Content and Style Images maps as is from previous version, not repeating here for brevity but they exist in context) ...
@@ -177,7 +173,11 @@ const App: React.FC = () => {
   // --- UI Navigation State ---
   const [activeCategory, setActiveCategory] = useState<'looks' | 'makeup' | 'hair' | 'outfit' | 'shop' | 'closet' | 'ask-ai' | 'eraser'>('looks');
   const [activeSubCategory, setActiveSubCategory] = useState<string>('lips'); 
-  const [showCompare, setShowCompare] = useState(false); 
+  const [showCompare, setShowCompare] = useState(false);
+  const [comparePos, setComparePos] = useState(50);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [cameraConsentOpen, setCameraConsentOpen] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false); 
 
   // --- Styling Options State ---
   const INITIAL_OPTIONS: EditOptions = {
@@ -304,7 +304,7 @@ const App: React.FC = () => {
     if (ctx) {
       ctx.lineWidth = eraserBrushSize * 4; // Scale brush relative to high-res image
       ctx.lineCap = 'round';
-      ctx.strokeStyle = 'rgba(255, 255, 255, 1)'; // White mask
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.55)';
       ctx.lineTo(coords.x, coords.y);
       ctx.stroke();
       ctx.beginPath();
@@ -318,8 +318,25 @@ const App: React.FC = () => {
     const ctx = maskCanvasRef.current.getContext('2d');
     ctx?.beginPath();
     
-    // Save mask to state
-    maskCanvasRef.current.toBlob((blob) => {
+    const display = maskCanvasRef.current;
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = display.width;
+    exportCanvas.height = display.height;
+    const exportCtx = exportCanvas.getContext('2d');
+    const displayCtx = display.getContext('2d');
+    if (exportCtx && displayCtx) {
+      const pixels = displayCtx.getImageData(0, 0, display.width, display.height);
+      const mask = exportCtx.createImageData(display.width, display.height);
+      for (let i = 0; i < pixels.data.length; i += 4) {
+        const painted = pixels.data[i + 3] > 0;
+        mask.data[i] = 255;
+        mask.data[i + 1] = 255;
+        mask.data[i + 2] = 255;
+        mask.data[i + 3] = painted ? 255 : 0;
+      }
+      exportCtx.putImageData(mask, 0, 0);
+    }
+    exportCanvas.toBlob((blob) => {
        if (blob) {
           const file = new File([blob], "mask.png", { type: "image/png" });
           handleCommitOption('maskImage', file);
@@ -398,12 +415,44 @@ const App: React.FC = () => {
 
   // Update state AND push to history (commit)
   const handleCommitOption = (key: keyof EditOptions, value: any) => {
-    const newOptions = { ...options, [key]: value };
+    handleCommitOptions({ [key]: value } as Partial<EditOptions>);
+  };
+
+  const handleCommitOptions = (patch: Partial<EditOptions>) => {
+    const newOptions = { ...options, ...patch };
     setOptions(newOptions);
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newOptions);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
+  };
+
+  const handleProductTryOn = (product: Product) => {
+    const mapping = getProductTryOn(product);
+    if (!mapping) {
+      setErrorMsg(`“${product.name}” is not mapped to an editor slot yet.`);
+      return;
+    }
+    handleCommitOptions(applyTryOnOptions(options, mapping.optionsPatch));
+    setActiveCategory(mapping.category);
+    if (mapping.subCategory) setActiveSubCategory(mapping.subCategory);
+    setActionMsg(`Trying on ${mapping.optionsPatch && product.tryOn?.label ? product.tryOn.label : product.name}. Click Generate to apply.`);
+  };
+
+  const handleExportLook = async (mode: 'download' | 'share') => {
+    const src = generatedImage || previewUrl;
+    if (!src) return;
+    try {
+      if (mode === 'share') {
+        const result = await shareLook(src);
+        setActionMsg(result === 'shared' ? 'Share sheet opened.' : 'Share is unavailable here, so the look was downloaded instead.');
+      } else {
+        await downloadLook(src);
+        setActionMsg('Look downloaded.');
+      }
+    } catch (error: any) {
+      setErrorMsg(error?.message || 'Could not export this look.');
+    }
   };
 
   const undo = () => {
@@ -517,7 +566,16 @@ const App: React.FC = () => {
   };
 
   // --- Camera/Reset Logic --- 
+  const requestCamera = () => {
+    setCameraConsentOpen(true);
+  };
+
   const startCamera = async () => { 
+    if (!ageConfirmed) {
+      setCameraConsentOpen(true);
+      return;
+    }
+    setCameraConsentOpen(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
       setIsCameraOpen(true);
@@ -542,6 +600,8 @@ const App: React.FC = () => {
       canvas.height = video.videoHeight;
       const context = canvas.getContext('2d');
       if (context) {
+        context.translate(canvas.width, 0);
+        context.scale(-1, 1);
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((blob) => {
           if (blob) {
@@ -570,20 +630,24 @@ const App: React.FC = () => {
   };
   
   const addToCart = (product: Product, openCart = true) => {
-    if (product.purchaseUrl) {
-        window.open(product.purchaseUrl, '_blank');
-        return;
-    }
     setCart(prev => [...prev, { ...product, cartId: Date.now().toString(), quantity: 1 }]);
     if (openCart) setIsCartOpen(true);
   };
+
+  const buyProduct = (product: Product) => {
+    if (product.purchaseUrl) {
+      window.open(product.purchaseUrl, '_blank', 'noopener,noreferrer');
+      setActionMsg('Opened the retailer in a new tab. That purchase is not a StyleShift order.');
+      return;
+    }
+    addToCart(product, true);
+  };
   
   const handleCheckout = () => {
-      setOrderStatus(OrderStatus.PROCESSING_PAYMENT);
+      setOrderStatus(OrderStatus.DEMO_PROCESSING);
       setTimeout(() => {
-          setOrderStatus(OrderStatus.SHIPPED);
-          setTimeout(() => { setCart([]); setOrderStatus(OrderStatus.IDLE); setIsCartOpen(false); }, 4000);
-      }, 3000);
+          setOrderStatus(OrderStatus.DEMO_COMPLETE);
+      }, 1200);
   };
 
   const addMakeupToCloset = () => {
@@ -646,6 +710,20 @@ const App: React.FC = () => {
                 ))}
              </ScrollableRow>
              <div className="px-4"><Slider label="Intensity" value={options.makeupIntensity} onChange={(e) => handlePreviewOption('makeupIntensity', parseInt(e.target.value))} onAfterChange={(val) => handleCommitOption('makeupIntensity', val)} /></div>
+             <div className="px-4 space-y-2">
+               <span className="text-[10px] font-bold text-gray-500 uppercase">Style strength</span>
+               <div className="flex gap-2">
+                 {STYLE_STRENGTH_OPTIONS.map((strength) => (
+                   <button
+                     key={strength}
+                     onClick={() => handleCommitOption('styleStrength', strength)}
+                     className={`text-[10px] px-3 py-1.5 rounded-full border ${options.styleStrength === strength ? 'bg-indigo-600 border-indigo-400 text-white' : 'border-gray-700 text-gray-400'}`}
+                   >
+                     {strength}
+                   </button>
+                 ))}
+               </div>
+             </div>
           </div>
       );
       case 'makeup': return ( 
@@ -670,6 +748,9 @@ const App: React.FC = () => {
                     </div>
                   )}
                </div>
+            </div>
+            <div className="px-4">
+              <MiniFileUpload label="Makeup reference" file={options.makeupReference || null} onFileChange={(f) => handleCommitOption('makeupReference', f)} />
             </div>
             {activeSubCategory === 'lips' && (
               <div className="px-4 space-y-4">
@@ -740,7 +821,7 @@ const App: React.FC = () => {
       case 'shop': return ( 
            <div className="px-4 space-y-4 h-full overflow-y-auto">
               <input type="text" placeholder="Search products..." className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white" value={shopSearchQuery} onChange={(e) => setShopSearchQuery(e.target.value)} />
-              <div className="grid grid-cols-2 gap-3 pb-20">{products.filter(p => p.name.toLowerCase().includes(shopSearchQuery.toLowerCase())).map(product => (<ProductCard key={product.id} {...product} onTryOn={() => { if (product.category === 'makeup') handleCommitOption('makeupLook', product.styleValue); if (product.category === 'outfit') handleCommitOption('outfit', product.styleValue); setActiveCategory('looks'); }} onAddToCart={() => addToCart(product, false)} onBuyNow={() => addToCart(product, true)} />))}</div>
+              <div className="grid grid-cols-2 gap-3 pb-20">{products.filter(p => p.name.toLowerCase().includes(shopSearchQuery.toLowerCase())).map(product => (<ProductCard key={product.id} {...product} onTryOn={() => handleProductTryOn(product)} onAddToCart={() => addToCart(product, false)} onBuyNow={() => buyProduct(product)} />))}</div>
            </div>
       );
       case 'closet': return (
@@ -811,7 +892,30 @@ const App: React.FC = () => {
   // --- Main View ---
   return (
     <div className="fixed inset-0 bg-black text-gray-100 font-sans overflow-hidden flex flex-col">
-      <CartSidebar isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} cartItems={cart} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.cartId !== id))} onCheckout={handleCheckout} orderStatus={orderStatus} />
+      <CartSidebar isOpen={isCartOpen} onClose={() => {
+        setIsCartOpen(false);
+        if (orderStatus === OrderStatus.DEMO_COMPLETE) {
+          setCart([]);
+          setOrderStatus(OrderStatus.IDLE);
+        }
+      }} cartItems={cart} onRemoveItem={(id) => setCart(prev => prev.filter(i => i.cartId !== id))} onCheckout={handleCheckout} orderStatus={orderStatus} />
+
+      {cameraConsentOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-6">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm space-y-4">
+            <h3 className="text-lg font-bold text-white">Camera consent</h3>
+            <p className="text-sm text-gray-400">StyleShift uses your camera only to capture a selfie for try-on. The photo stays in this browser unless you download or save a look.</p>
+            <label className="flex items-start gap-2 text-sm text-gray-300">
+              <input type="checkbox" className="mt-1" checked={ageConfirmed} onChange={(e) => setAgeConfirmed(e.target.checked)} />
+              I confirm I am 18 or older.
+            </label>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setCameraConsentOpen(false)}>Cancel</Button>
+              <Button disabled={!ageConfirmed} onClick={startCamera}>Continue</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <header className="flex-shrink-0 h-14 bg-black/80 backdrop-blur-md border-b border-gray-800 flex items-center justify-between px-4 z-20">
         <div className="flex items-center space-x-2">
@@ -829,14 +933,20 @@ const App: React.FC = () => {
                 <button onClick={redo} disabled={historyIndex === history.length-1} className="p-1.5 text-gray-400 hover:text-white disabled:opacity-30"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"></path></svg></button>
              </div>
            )}
+           {(generatedImage || previewUrl) && (
+             <>
+               <button onClick={() => handleExportLook('download')} className="text-xs font-medium text-gray-400 hover:text-white transition-colors" title="Download look">Download</button>
+               <button onClick={() => handleExportLook('share')} className="text-xs font-medium text-gray-400 hover:text-white transition-colors" title="Share look">Share</button>
+             </>
+           )}
            {generatedImage && (
              <button onClick={handleSaveLookToCloset} className="text-pink-500 hover:text-pink-400 transition-colors bg-pink-500/10 p-2 rounded-full" title="Save to Closet">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
              </button>
            )}
-           {file && (
-             <button onClick={() => setShowCompare(!showCompare)} className="text-xs font-medium text-gray-400 hover:text-white transition-colors">
-               {showCompare ? 'Hide Original' : 'Compare'}
+           {generatedImage && previewUrl && (
+             <button onClick={() => { setShowCompare(!showCompare); setComparePos(50); }} className="text-xs font-medium text-gray-400 hover:text-white transition-colors">
+               {showCompare ? 'Hide Compare' : 'Compare'}
              </button>
            )}
            <button onClick={() => setIsCartOpen(true)} className="relative text-gray-400 hover:text-white">
@@ -860,7 +970,8 @@ const App: React.FC = () => {
                   <div className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg cursor-pointer text-center transition-colors shadow-lg shadow-indigo-500/30">Upload Photo</div>
                   <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                </label>
-               <button onClick={startCamera} className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold py-3 px-4 rounded-lg transition-colors">Take Selfie</button>
+               <button onClick={requestCamera} className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold py-3 px-4 rounded-lg transition-colors">Take Selfie</button>
+               <p className="text-[10px] text-gray-500">Photos stay in this browser unless you download or save a look. Confirm you are 18+ before using the camera.</p>
              </div>
           </div>
         ) : isCameraOpen ? (
@@ -875,7 +986,9 @@ const App: React.FC = () => {
         ) : (
            <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden p-6 md:p-12">
               <div ref={imageContainerRef} style={{ transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`, transition: (isDragging || isEraserDrawing) ? 'none' : 'transform 0.1s ease-out' }} className="w-full h-full flex items-center justify-center relative">
-                  {generatedImage && !showCompare ? (
+                  {generatedImage && showCompare && previewUrl ? (
+                     <CompareSlider originalSrc={previewUrl} editedSrc={generatedImage} position={comparePos} onPositionChange={setComparePos} />
+                  ) : generatedImage && !showCompare ? (
                      <img src={generatedImage} alt="Styled" className="w-full h-full object-contain pointer-events-none shadow-2xl drop-shadow-2xl" />
                   ) : (
                      <img src={previewUrl!} alt="Original" className="w-full h-full object-contain pointer-events-none shadow-2xl drop-shadow-2xl" />
@@ -904,7 +1017,7 @@ const App: React.FC = () => {
               )}
               
               <button onClick={resetAll} className="absolute top-4 left-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full backdrop-blur-md z-20"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-              {generatedImage && <div className="absolute top-4 right-4 bg-black/60 px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider backdrop-blur-md z-20 pointer-events-none">{showCompare ? 'Original' : 'After'}</div>}
+              {generatedImage && !showCompare && <div className="absolute top-4 right-4 bg-black/60 px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider backdrop-blur-md z-20 pointer-events-none">After</div>}
            </div>
         )}
       </main>
@@ -919,6 +1032,7 @@ const App: React.FC = () => {
                  )}
               </div>
               {renderEditorControls()}
+              {actionMsg && <div className="px-4 mt-2"><Alert type="success" message={actionMsg} /></div>}
               {errorMsg && <div className="px-4 mt-2"><Alert type="error" message={errorMsg} /></div>}
            </div>
            {/* Bottom Category Navigation */}

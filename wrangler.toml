@@ -1,0 +1,7 @@
+name = "styleshift"
+compatibility_date = "2026-11-16"
+pages_build_output_dir = "dist"
+
+# GEMINI_API_KEY is a secret — do not put it here.
+# Set it with:
+#   npx wrangler pages secret put GEMINI_API_KEY --project-name styleshift
